@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Editorial newsroom palette */
+  --color-ink-900: #16151a;
+  --color-ink-800: #201f26;
+  --color-ink-700: #2c2a33;
+  --color-ink-600: #4a4852;
+  --color-ink-400: #8b8893;
+
+  --color-paper-50: #f7f4ed;
+  --color-paper-100: #efe9dc;
+  --color-paper-200: #e2dac8;
+
+  --color-press-red: #b23a2e;
+  --color-press-red-dark: #8e2c22;
+  --color-wire-teal: #2e6f6b;
+  --color-wire-teal-dark: #20524f;
+  --color-amber-proof: #c98a2c;
+  --color-amber-proof-dark: #a06f1f;
+
+  --font-display: "Fraunces", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", monospace;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper-50);
+  color: var(--color-ink-700);
+}
+
+::selection {
+  background: var(--color-press-red);
+  color: var(--color-paper-50);
+}
+
+/* Stamp-style status badge — the signature element */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28em 0.7em;
+  border-radius: 3px;
+  border: 1.5px solid currentColor;
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-paper-200);
+  border-radius: 4px;
+}
+
+/* ── Rich Text Editor (Tiptap) ── */
+.rich-editor .tiptap {
+  min-height: 320px;
+  padding: 1rem;
+  outline: none;
+  font-family: 'Noto Sans Kannada', 'Inter', sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: #16151a;
+}
+.rich-editor .tiptap p { margin: 0 0 0.75rem; }
+.rich-editor .tiptap h2 { font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.rich-editor .tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 1.25rem 0 0.4rem; }
+.rich-editor .tiptap ul { padding-left: 1.5rem; margin-bottom: 0.75rem; list-style: disc; }
+.rich-editor .tiptap ol { padding-left: 1.5rem; margin-bottom: 0.75rem; list-style: decimal; }
+.rich-editor .tiptap li { margin-bottom: 0.25rem; }
+.rich-editor .tiptap blockquote {
+  border-left: 3px solid #b23a2e;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background: #fdf9f8;
+  color: #4a4852;
+  font-style: italic;
+}
+.rich-editor .tiptap hr { border: none; border-top: 2px solid #e8e4df; margin: 1.5rem 0; }
+.rich-editor .tiptap a { color: #b23a2e; text-decoration: underline; }
+.rich-editor .tiptap strong { font-weight: 700; }
+.rich-editor .tiptap em { font-style: italic; }
+.rich-editor .tiptap u { text-decoration: underline; }
+.rich-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #c4c1cc;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}

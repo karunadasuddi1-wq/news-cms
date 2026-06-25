@@ -1,0 +1,35 @@
+{
+  "name": "news-cms-backend",
+  "version": "1.0.0",
+  "description": "News CMS backend API — Express + Sequelize (SQLite or Postgres) with JWT auth and role-based editorial workflow.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "keywords": [
+    "news",
+    "cms",
+    "express",
+    "sequelize"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "pg": "^8.22.0",
+    "sequelize": "^6.37.8",
+    "slugify": "^1.6.9",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
