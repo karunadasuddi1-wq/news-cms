@@ -11,6 +11,11 @@ async function start() {
     // which handles schema changes after the initial deploy.
     await sequelize.sync({ alter: true });
     console.log('[db] Models synced.');
+    if (process.env.MIGRATE === 'true') {
+      setTimeout(() => {
+        try { require('./migrate'); } catch(e) { console.error('[migrate] Error:', e.message); }
+      }, 3000);
+    }
 
     app.listen(config.port, () => {
       console.log(`[server] News CMS API listening on http://localhost:${config.port}`);
