@@ -12,6 +12,8 @@ const articleRoutes = require('./routes/articles');
 const dashboardRoutes = require('./routes/dashboard');
 const seoRoutes = require('./routes/seo');
 const analyticsRoutes = require('./routes/analytics');
+const pageRoutes = require('./routes/pages');
+const { listPublic: listPublicPages, getPublic: getPublicPage } = require('./controllers/pageController');
 const publicRoutes = require('./routes/public');
 
 const app = express();
@@ -58,6 +60,11 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/pages', pageRoutes);
+
+// Public pages (no auth)
+app.get('/api/public/pages', listPublicPages);
+app.get('/api/public/pages/:slug', getPublicPage);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
