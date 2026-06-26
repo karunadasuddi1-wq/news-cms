@@ -15,9 +15,15 @@ const NAV_LABELS = {
 
 export default function Footer() {
   const [categories, setCategories] = useState([]);
+  const [pages, setPages] = useState([]);
+  const API = import.meta.env.VITE_API_URL || '';
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => {});
+    fetch(`${API}/public/pages`)
+      .then(r => r.json())
+      .then(d => setPages((d.pages || []).filter(p => p.showInFooter)))
+      .catch(() => {});
   }, []);
 
   return (
@@ -81,11 +87,20 @@ export default function Footer() {
           <div>
             <h4 className="font-ui font-semibold text-white text-sm uppercase tracking-wide mb-3">About</h4>
             <ul className="space-y-1.5">
-              <li><Link to="/" className="text-xs font-kannada text-gray-500 hover:text-white transition-colors">ನಮ್ಮ ಬಗ್ಗೆ</Link></li>
-              <li><Link to="/" className="text-xs font-kannada text-gray-500 hover:text-white transition-colors">ಸಂಪರ್ಕ</Link></li>
-              <li><Link to="/" className="text-xs font-kannada text-gray-500 hover:text-white transition-colors">ಜಾಹೀರಾತು</Link></li>
-              <li><Link to="/" className="text-xs font-ui text-gray-500 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/" className="text-xs font-ui text-gray-500 hover:text-white transition-colors">Terms of Use</Link></li>
+              {pages.map(p => (
+                <li key={p.id}>
+                  <Link to={`/page/${p.slug}`} className="text-xs font-kannada text-gray-500 hover:text-white transition-colors">
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
+              {pages.length === 0 && (
+                <>
+                  <li><Link to="/page/about-us" className="text-xs text-gray-500 hover:text-white transition-colors">About Us</Link></li>
+                  <li><Link to="/page/contact-us" className="text-xs text-gray-500 hover:text-white transition-colors">Contact Us</Link></li>
+                  <li><Link to="/page/privacy-policy" className="text-xs text-gray-500 hover:text-white transition-colors">Privacy Policy</Link></li>
+                </>
+              )}
             </ul>
           </div>
         </div>
