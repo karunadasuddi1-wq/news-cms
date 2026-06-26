@@ -1,4 +1,3 @@
-  #!/usr/bin/env node
 /**
  * ══════════════════════════════════════════════════════
  *  WordPress → Newsroom CMS Migration Script
