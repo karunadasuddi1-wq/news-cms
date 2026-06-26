@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/articles', label: 'Articles', icon: '▤' },
   { to: '/categories', label: 'Categories', icon: '▥' },
   { to: '/analytics', label: 'Analytics', icon: '▲' },
+  { to: '/pages', label: 'Pages', icon: '◧' },
   { to: '/users', label: 'Staff', icon: '☷', requiresAdmin: true },
 ];
 
