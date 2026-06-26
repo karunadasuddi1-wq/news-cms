@@ -156,6 +156,9 @@ async function migrate() {
           const wpTags = post._embedded?.['wp:term']?.[1] || [];
           const tags = wpTags.map(t => t.slug).slice(0, 6);
 
+          // Get original author name from WordPress
+          const wpAuthorName = post._embedded?.author?.[0]?.name || '';
+          
           const importRes = await request(`${CONFIG.cmsApiUrl}/articles`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -169,16 +172,15 @@ async function migrate() {
               tags,
               seoTitle: stripHtml(post.title?.rendered || '').slice(0, 60),
               seoDescription: excerpt.slice(0, 155),
+              // Preserve original WordPress publish date
+              status: 'published',
+              publishedAt: post.date,
+              // Store original author name in excerpt if different
+              wpAuthor: wpAuthorName,
             },
           });
 
           if (importRes.status === 201) {
-            // Publish it
-            await request(`${CONFIG.cmsApiUrl}/articles/${importRes.data.article.id}/status`, {
-              method: 'PATCH',
-              headers: { Authorization: `Bearer ${token}` },
-              body: { status: 'published' },
-            });
             totalImported++;
             if (totalImported % 10 === 0) console.log(`[migrate] Imported ${totalImported} articles...`);
           }
