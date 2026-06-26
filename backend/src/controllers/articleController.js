@@ -102,7 +102,7 @@ const getOne = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug } = req.body;
+  const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug, publishedAt: bodyPublishedAt } = req.body;
 
   if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required.' });
   if (!content || !content.trim()) return res.status(400).json({ error: 'Content is required.' });
@@ -121,6 +121,8 @@ const create = asyncHandler(async (req, res) => {
   // Use custom slug from editor if provided, otherwise auto-generate
   const slug = await resolveSlug(customSlug, title);
 
+  // Allow migration to set status and original publish date
+  const initialStatus = req.body.status === 'published' ? 'published' : 'draft';
   const article = Article.build({
     title: title.trim(),
     slug,
@@ -129,7 +131,9 @@ const create = asyncHandler(async (req, res) => {
     featuredImage: featuredImage || null,
     categoryId,
     authorId: resolvedAuthorId,
-    status: 'draft',
+    status: initialStatus,
+    // Preserve original publish date when migrating from WordPress
+    publishedAt: bodyPublishedAt ? new Date(bodyPublishedAt) : (initialStatus === 'published' ? new Date() : null),
   });
 
   applySeoFields(article, req.body);
