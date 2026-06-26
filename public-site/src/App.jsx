@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Category from './pages/Category';
 import Article from './pages/Article';
+import Page from './pages/Page';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
             <Route path="/:category/:slug" element={<Article />} />
             {/* Legacy redirect support: /article/:slug still works */}
             <Route path="/article/:slug" element={<Article />} />
+            <Route path="/page/:slug" element={<Page />} />
             <Route path="*" element={
               <div className="max-w-7xl mx-auto px-4 py-20 text-center">
                 <h1 className="font-bold text-2xl text-gray-800 mb-3">404 — ಪುಟ ಸಿಗಲಿಲ್ಲ</h1>
