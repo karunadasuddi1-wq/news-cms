@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import Sidebar from '../components/Sidebar';
@@ -10,12 +10,12 @@ function HeroSection({ articles }) {
   if (!articles || articles.length === 0) return null;
   const [main, second, ...rest] = articles;
   function HeroCell({ a, spanClass }) {
-    const img = a?.featuredImage || a?.featured_image;
+    const img = a?.featured_image;
     return (
       <Link to={`/article/${a.slug}`} className={`hero-cell ${spanClass||''}`}>
         {img ? <img src={img} alt={a.title} className="hero-img" loading="eager"/> : <div className="hero-img img-placeholder-hero">📰</div>}
         <div className="hero-overlay">
-          {a.Category && <span className="hero-badge">{a.Category.name}</span>}
+          {a.category && <span className="hero-badge">{a.category.name}</span>}
           <div className="hero-title">{a.title}</div>
           <div className="hero-date">{timeAgo(a.published_at||a.created_at)}</div>
         </div>
@@ -35,7 +35,7 @@ function HeroSection({ articles }) {
 function RajyaSection({ articles }) {
   if (!articles || articles.length === 0) return null;
   const [featured, ...listItems] = articles;
-  const featImg = featured.featured_image || featured.featuredImage;
+  const featImg = featured.featured_image;
   return (
     <div className="content-block">
       <SecHead title="ರಾಜ್ಯ" slug="rajya" />
@@ -43,14 +43,14 @@ function RajyaSection({ articles }) {
         <Link to={`/article/${featured.slug}`} className="rajya-featured">
           {featImg ? <img src={featImg} alt={featured.title} className="rajya-featured-img" loading="lazy"/> : <div className="rajya-featured-img img-placeholder-hero">📰</div>}
           <div className="rajya-featured-caption">
-            {featured.Category && <span className="hero-badge">{featured.Category.name}</span>}
+            {featured.category && <span className="hero-badge">{featured.category.name}</span>}
             <div className="rajya-featured-title">{featured.title}</div>
             <div className="rajya-featured-meta">{timeAgo(featured.published_at||featured.created_at)}</div>
           </div>
         </Link>
         <div className="rajya-list">
           {listItems.slice(0,4).map(a => {
-            const img = a.featured_image || a.featuredImage;
+            const img = a.featured_image;
             return (
               <div key={a.id} className="rajya-list-item">
                 <Link to={`/article/${a.slug}`}>
@@ -74,8 +74,8 @@ function useCatArticles(slug, limit=5) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
   useEffect(() => {
-    api.getArticlesByCategory(slug, { limit, pageSize: limit })
-      .then(res => { const arr = Array.isArray(res) ? res : (res.articles || res.rows || []); setData(arr); })
+    api.getArticlesByCategory(slug, { pageSize: limit })
+      .then(res => setData(res.articles || []))
       .catch(() => setErr(true))
       .finally(() => setLoading(false));
   }, [slug]);
@@ -103,7 +103,7 @@ function ListSection({ title, slug, limit=5 }) {
       <SecHead title={title} slug={slug}/>
       <div className="rajya-list">
         {data.map(a => {
-          const img = a.featured_image || a.featuredImage;
+          const img = a.featured_image;
           return (
             <div key={a.id} className="rajya-list-item">
               <Link to={`/article/${a.slug}`}>
@@ -152,17 +152,17 @@ export default function HomePage() {
   const [heroErr, setHeroErr] = useState(false);
 
   useEffect(() => {
-    api.getArticles({ limit: 10, pageSize: 10 })
+    api.getArticles({ pageSize: 10 })
       .then(res => {
-        const arr = Array.isArray(res) ? res : (res.articles || res.rows || []);
+        const arr = res.articles || [];
         setHero(arr.slice(0,4));
         setTicker(arr.slice(0,8));
       })
       .catch(() => setHeroErr(true))
       .finally(() => setHeroLoading(false));
 
-    api.getArticlesByCategory('rajya', { limit: 5 })
-      .then(res => { const arr = Array.isArray(res) ? res : (res.articles || res.rows || []); setRajya(arr); })
+    api.getArticlesByCategory('rajya', { pageSize: 5 })
+      .then(res => setRajya(res.articles || []))
       .catch(() => {});
   }, []);
 
