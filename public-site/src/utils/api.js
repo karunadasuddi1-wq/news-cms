@@ -7,24 +7,21 @@ async function apiFetch(path) {
 }
 
 export const api = {
-  // Articles
   getArticles: (params = {}) => {
-    const q = new URLSearchParams({ status: 'published', ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams(params).toString();
+    return apiFetch(`/api/public/articles${q ? '?' + q : ''}`);
   },
-  getArticle: (slug) => apiFetch(`/api/articles/${slug}`),
+  getArticle: (slug) => apiFetch(`/api/public/articles/${slug}`),
   getArticlesByCategory: (categorySlug, params = {}) => {
-    const q = new URLSearchParams({ status: 'published', category: categorySlug, ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams({ category: categorySlug, ...params }).toString();
+    return apiFetch(`/api/public/articles?${q}`);
   },
   searchArticles: (query, params = {}) => {
-    const q = new URLSearchParams({ status: 'published', search: query, ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams({ search: query, ...params }).toString();
+    return apiFetch(`/api/public/articles?${q}`);
   },
-  // Categories
-  getCategories: () => apiFetch('/api/categories'),
-  // Pages (static content)
-  getPage: (slug) => apiFetch(`/api/pages/${slug}`),
+  getCategories: () => apiFetch('/api/public/categories'),
+  getPage: (slug) => apiFetch(`/api/public/articles/${slug}`),
 };
 
 export function formatDate(dateStr) {
@@ -40,7 +37,5 @@ export function timeAgo(dateStr) {
   if (minutes < 60) return `${minutes} ನಿಮಿಷಗಳ ಹಿಂದೆ`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} ಗಂಟೆಗಳ ಹಿಂದೆ`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} ದಿನಗಳ ಹಿಂದೆ`;
   return formatDate(dateStr);
 }
