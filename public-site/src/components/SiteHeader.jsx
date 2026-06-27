@@ -3,25 +3,26 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const DAYS = ['ಭಾನುವಾರ','ಸೋಮವಾರ','ಮಂಗಳವಾರ','ಬುಧವಾರ','ಗುರುವಾರ','ಶುಕ್ರವಾರ','ಶನಿವಾರ'];
 const MONTHS = ['ಜನವರಿ','ಫೆಬ್ರವರಿ','ಮಾರ್ಚ್','ಏಪ್ರಿಲ್','ಮೇ','ಜೂನ್','ಜುಲೈ','ಆಗಸ್ಟ್','ಸೆಪ್ಟೆಂಬರ್','ಅಕ್ಟೋಬರ್','ನವೆಂಬರ್','ಡಿಸೆಂಬರ್'];
-
 function kannadaDate() {
   const d = new Date();
   return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+// Matches actual WP category slugs migrated to CMS
 const NAV = [
-  { label: 'ಮುಖಪುಟ', to: '/', home: true },
-  { label: 'ಕರ್ನಾಟಕ', to: '/category/karnataka', drop: true },
-  { label: 'ರಾಜ್ಯ', to: '/category/rajya', drop: true },
-  { label: 'ರಾಜಕೀಯ', to: '/category/rajakeeyata' },
-  { label: 'ದೇಶ', to: '/category/desh' },
-  { label: 'ಅಂತರಾಷ್ಟ್ರೀಯ', to: '/category/antarashetriya' },
-  { label: 'ಮನರಂಜನೆ', to: '/category/entertainment' },
-  { label: 'ಕ್ರೀಡೆ', to: '/category/sports', drop: true },
-  { label: 'ವಿಜ್ಞಾನ', to: '/category/science' },
-  { label: 'ಉದ್ಯೋಗ', to: '/category/employment' },
-  { label: 'ಹಣಕಾಸು', to: '/category/finance' },
-  { label: 'MORE', to: '#', drop: true },
+  { label: 'ಹೋಂ',           to: '/',                    home: true },
+  { label: 'ಕರುನಾಡು',       to: '/category/karunadu' },
+  { label: 'ರಾಜ್ಯ',         to: '/category/state',      drop: true },
+  { label: 'ರಾಜಕೀಯ',       to: '/category/politics' },
+  { label: 'ದೇಶ',           to: '/category/national' },
+  { label: 'ಅಂತಾರಾಷ್ಟ್ರೀಯ', to: '/category/international' },
+  { label: 'ಮನರಂಜನೆ',      to: '/category/entertainment' },
+  { label: 'ಕ್ರೀಡೆ',        to: '/category/sports',     drop: true },
+  { label: 'ವಿಜ್ಞಾನ',       to: '/category/science' },
+  { label: 'ಉದ್ಯೋಗ',        to: '/category/jobs' },
+  { label: 'ಹಣಕಾಸು',       to: '/category/money' },
+  { label: 'ಲೈಫಸ್ಟೈಲ್',    to: '/category/lifestyle' },
+  { label: 'ಕ್ರೈಂ',         to: '/category/crime' },
 ];
 
 export default function SiteHeader({ tickerArticles = [] }) {
@@ -32,7 +33,11 @@ export default function SiteHeader({ tickerArticles = [] }) {
 
   function handleSearch(e) {
     e.preventDefault();
-    if (query.trim()) { navigate(`/search?q=${encodeURIComponent(query.trim())}`); setSearchOpen(false); setQuery(''); }
+    if (query.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      setSearchOpen(false);
+      setQuery('');
+    }
   }
 
   const ticker = tickerArticles.length > 0 ? [...tickerArticles, ...tickerArticles] : [];
@@ -52,7 +57,7 @@ export default function SiteHeader({ tickerArticles = [] }) {
         </div>
       </div>
 
-      {/* Header with logo + banner ad */}
+      {/* Header */}
       <header className="site-header">
         <div className="container header-inner">
           <Link to="/" className="logo-wrap">
@@ -65,14 +70,14 @@ export default function SiteHeader({ tickerArticles = [] }) {
           </div>
         </div>
 
-        {/* Nav bar */}
+        {/* Nav */}
         <nav className="main-nav">
           <div className="container nav-list">
             {NAV.map(item => (
               <div key={item.to} className="nav-item">
                 <Link
                   to={item.to}
-                  className={`nav-link${item.home && location.pathname === '/' ? ' home' : ''}${location.pathname === item.to && !item.home ? ' active' : ''}`}
+                  className={`nav-link${item.home && location.pathname === '/' ? ' home' : ''}${!item.home && location.pathname === item.to ? ' active' : ''}`}
                 >
                   {item.label}
                   {item.drop && <span className="nav-arrow">▾</span>}
@@ -83,9 +88,9 @@ export default function SiteHeader({ tickerArticles = [] }) {
           </div>
 
           {searchOpen && (
-            <div style={{ background: '#fff', borderTop: '1px solid #eee', padding: '8px 12px' }}>
-              <form onSubmit={handleSearch} className="search-form" style={{ maxWidth: 560, margin: '0 auto' }}>
-                <input className="search-inp" placeholder="ಸುದ್ದಿ ಹುಡುಕಿ..." value={query} onChange={e => setQuery(e.target.value)} autoFocus />
+            <div style={{background:'#fff',borderTop:'1px solid #eee',padding:'8px 12px'}}>
+              <form onSubmit={handleSearch} className="search-form" style={{maxWidth:560,margin:'0 auto'}}>
+                <input className="search-inp" placeholder="ಸುದ್ದಿ ಹುಡುಕಿ..." value={query} onChange={e=>setQuery(e.target.value)} autoFocus/>
                 <button type="submit" className="search-go">ಹುಡುಕು</button>
               </form>
             </div>

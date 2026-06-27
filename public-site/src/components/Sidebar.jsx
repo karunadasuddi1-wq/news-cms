@@ -24,10 +24,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     api.getArticlesByCategory('entertainment', { pageSize: 4 })
-      .then(data => {
-        const arr = data.articles || [];
-        setEntArticles(arr.slice(0, 4));
-      })
+      .then(data => setEntArticles(data.articles?.slice(0,4) || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
