@@ -14,13 +14,13 @@ function HeroSection({ articles }) {
     if (!a) return null;
     return (
       <Link to={`/article/${a.slug}`} className={`hero-cell ${spanClass||''}`}>
-        {a.featured_image
-          ? <img src={a.featured_image} alt={a.title} className="hero-img" loading="eager"/>
+        {a.featuredImage || a.featured_image
+          ? <img src={a.featuredImage || a.featured_image} alt={a.title} className="hero-img" loading="eager"/>
           : <div className="hero-img img-placeholder-hero">📰</div>}
         <div className="hero-overlay">
           {a.category && <span className="hero-badge">{a.category.name}</span>}
           <div className="hero-title">{a.title}</div>
-          <div className="hero-date">{timeAgo(a.published_at||a.created_at)}</div>
+          <div className="hero-date">{timeAgo(a.publishedAt||a.published_at||a.createdAt||a.created_at)}</div>
         </div>
       </Link>
     );
@@ -55,26 +55,26 @@ function FeaturedListSection({ title, slug, featuredCount=1, listCount=4 }) {
       <SecHead title={title} slug={slug}/>
       <div className="rajya-layout">
         <Link to={`/article/${featured.slug}`} className="rajya-featured">
-          {featured.featured_image
-            ? <img src={featured.featured_image} alt={featured.title} className="rajya-featured-img" loading="lazy"/>
+          {featured.featuredImage || featured.featured_image
+            ? <img src={featured.featuredImage || featured.featured_image} alt={featured.title} className="rajya-featured-img" loading="lazy"/>
             : <div className="rajya-featured-img img-placeholder-hero">📰</div>}
           <div className="rajya-featured-caption">
             {featured.category && <span className="hero-badge">{featured.category.name}</span>}
             <div className="rajya-featured-title">{featured.title}</div>
-            <div className="rajya-featured-meta">{timeAgo(featured.published_at||featured.created_at)}</div>
+            <div className="rajya-featured-meta">{timeAgo(featured.publishedAt||featured.published_at||featured.createdAt||featured.created_at)}</div>
           </div>
         </Link>
         <div className="rajya-list">
           {rest.slice(0, listCount).map(a => (
             <div key={a.id} className="rajya-list-item">
               <Link to={`/article/${a.slug}`}>
-                {a.featured_image
-                  ? <img src={a.featured_image} alt={a.title} className="rajya-thumb" loading="lazy"/>
+                {a.featuredImage || a.featured_image
+                  ? <img src={a.featuredImage || a.featured_image} alt={a.title} className="rajya-thumb" loading="lazy"/>
                   : <div className="rajya-thumb img-placeholder-hero" style={{fontSize:16}}>📰</div>}
               </Link>
               <div className="rajya-item-body">
                 <Link to={`/article/${a.slug}`} className="rajya-item-title">{a.title}</Link>
-                <div className="rajya-item-meta">{timeAgo(a.published_at||a.created_at)}</div>
+                <div className="rajya-item-meta">{timeAgo(a.publishedAt||a.published_at||a.createdAt||a.created_at)}</div>
               </div>
             </div>
           ))}
@@ -123,13 +123,13 @@ function ListSection({ title, slug, limit=5 }) {
         {articles.map(a => (
           <div key={a.id} className="rajya-list-item">
             <Link to={`/article/${a.slug}`}>
-              {a.featured_image
-                ? <img src={a.featured_image} alt={a.title} className="rajya-thumb" loading="lazy"/>
+              {a.featuredImage || a.featured_image
+                ? <img src={a.featuredImage || a.featured_image} alt={a.title} className="rajya-thumb" loading="lazy"/>
                 : <div className="rajya-thumb img-placeholder-hero" style={{fontSize:16}}>📰</div>}
             </Link>
             <div className="rajya-item-body">
               <Link to={`/article/${a.slug}`} className="rajya-item-title">{a.title}</Link>
-              <div className="rajya-item-meta">{timeAgo(a.published_at||a.created_at)}</div>
+              <div className="rajya-item-meta">{timeAgo(a.publishedAt||a.published_at||a.createdAt||a.created_at)}</div>
             </div>
           </div>
         ))}

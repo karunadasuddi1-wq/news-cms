@@ -7,7 +7,7 @@ import { Loading, Err } from '../components/ArticleCards';
 import { api, formatDate, timeAgo } from '../utils/api';
 
 function RelatedItem({ a }) {
-  const img = a.featured_image;
+  const img = a.featuredImage || a.featured_image;
   return (
     <div className="rajya-list-item">
       <Link to={`/article/${a.slug}`}>
@@ -46,7 +46,7 @@ export default function ArticlePage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const img = article?.featured_image;
+  const img = article?.featuredImage || article?.featured_image;
   const cat = article?.category;
   const author = article?.author;
 
@@ -71,7 +71,7 @@ export default function ArticlePage() {
                     <h1 className="art-title">{article.title}</h1>
                     <div className="art-meta">
                       {author?.name && <span>✍ {author.name}</span>}
-                      <span>📅 {formatDate(article.published_at||article.created_at)}</span>
+                      <span>📅 {formatDate(article.publishedAt||article.published_at||article.createdAt||article.created_at)}</span>
                     </div>
                   </div>
                   {img && <img src={img} alt={article.title} className="art-hero-img"/>}
