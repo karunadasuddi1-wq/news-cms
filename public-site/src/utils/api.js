@@ -7,21 +7,22 @@ async function apiFetch(path) {
 }
 
 export const api = {
+  // Use /api/public/ routes — no auth needed
   getArticles: (params = {}) => {
-    const q = new URLSearchParams({ status: 'published', ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams(params).toString();
+    return apiFetch(`/api/public/articles?${q}`);
   },
-  getArticle: (slug) => apiFetch(`/api/articles/${slug}`),
+  getArticle: (slug) => apiFetch(`/api/public/articles/${slug}`),
   getArticlesByCategory: (categorySlug, params = {}) => {
-    const q = new URLSearchParams({ status: 'published', category: categorySlug, ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams({ category: categorySlug, ...params }).toString();
+    return apiFetch(`/api/public/articles?${q}`);
   },
   searchArticles: (query, params = {}) => {
-    const q = new URLSearchParams({ status: 'published', search: query, ...params }).toString();
-    return apiFetch(`/api/articles?${q}`);
+    const q = new URLSearchParams({ search: query, ...params }).toString();
+    return apiFetch(`/api/public/articles?${q}`);
   },
-  getCategories: () => apiFetch('/api/categories'),
-  getPage: (slug) => apiFetch(`/api/pages/${slug}`),
+  getCategories: () => apiFetch('/api/public/categories'),
+  getPage: (slug) => apiFetch(`/api/public/articles/${slug}`),
 };
 
 export function formatDate(dateStr) {
