@@ -3,11 +3,13 @@ const { list, getOne, create, update, remove } = require('../controllers/pageCon
 const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
-router.use(requireAuth);
+// Public
 router.get('/', list);
 router.get('/:id', getOne);
-router.post('/', create);
-router.put('/:id', update);
-router.delete('/:id', remove);
+
+// Protected
+router.post('/', requireAuth, create);
+router.put('/:id', requireAuth, update);
+router.delete('/:id', requireAuth, remove);
 
 module.exports = router;
