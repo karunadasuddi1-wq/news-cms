@@ -191,8 +191,7 @@ async function fixDates() {
       failed++;
     }
 
-    await sleep(300); // be gentle on the API
-  }
+await sleep(100);  }
 
   // 5. Summary
   console.log('\n╔══════════════════════════════════════╗');
