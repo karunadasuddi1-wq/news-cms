@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { timeAgo } from '../utils/api';
 
-export function Img({ src, alt, className, style }) {
-  if (src) return <img src={src} alt={alt||''} className={className} style={style} loading="lazy" />;
-  return <div className={`img-placeholder-hero ${className||''}`} style={style}>📰</div>;
-}
+// API returns featuredImage (camelCase)
+function getImg(a) { return a.featuredImage || a.featured_image || ''; }
+function getCat(a) { return a.category || null; }
+function getDate(a) { return a.publishedAt || a.published_at || a.createdAt || a.created_at || ''; }
 
 export function Loading() {
   return <div className="spinner-wrap"><div className="spin"/><span>ಲೋಡ್ ಆಗುತ್ತಿದೆ...</span></div>;
@@ -12,23 +12,19 @@ export function Loading() {
 export function Err({ msg='ಸುದ್ದಿ ಲೋಡ್ ಆಗಲಿಲ್ಲ.' }) {
   return <div className="err">{msg}</div>;
 }
-
 export function SecHead({ title, slug }) {
   return (
     <div className="sec-head">
       <h2 className="sec-title">{title}</h2>
       <div style={{display:'flex',gap:10}}>
         {slug && <Link to={`/category/${slug}`} className="sec-more">ಇನ್ನಷ್ಟು »</Link>}
-        <span className="sec-collapse">−</span>
       </div>
     </div>
   );
 }
 
-/** Grid 2-col card */
 export function GridCard({ a }) {
-  const img = a.featured_image;
-  const cat = a.category; // lowercase from API
+  const img = getImg(a); const cat = getCat(a);
   return (
     <div className="grid-card">
       <Link to={`/article/${a.slug}`}>
@@ -37,16 +33,14 @@ export function GridCard({ a }) {
       <div className="grid-card-body">
         {cat && <div className="grid-card-cat"><Link to={`/category/${cat.slug}`}>{cat.name}</Link></div>}
         <Link to={`/article/${a.slug}`} className="grid-card-title">{a.title}</Link>
-        <div className="grid-card-date">{timeAgo(a.published_at||a.created_at)}</div>
+        <div className="grid-card-date">{timeAgo(getDate(a))}</div>
       </div>
     </div>
   );
 }
 
-/** Mini 4-col card */
 export function MiniCard({ a }) {
-  const img = a.featured_image;
-  const cat = a.category;
+  const img = getImg(a); const cat = getCat(a);
   return (
     <div className="mini-card">
       <Link to={`/article/${a.slug}`}>
@@ -55,15 +49,14 @@ export function MiniCard({ a }) {
       <div className="mini-card-body">
         {cat && <div className="mini-card-cat">{cat.name}</div>}
         <Link to={`/article/${a.slug}`} className="mini-card-title">{a.title}</Link>
-        <div className="mini-card-date">{timeAgo(a.published_at||a.created_at)}</div>
+        <div className="mini-card-date">{timeAgo(getDate(a))}</div>
       </div>
     </div>
   );
 }
 
-/** Sidebar thumbnail item */
 export function SbEntItem({ a }) {
-  const img = a.featured_image;
+  const img = getImg(a);
   return (
     <div className="sb-ent-item">
       <Link to={`/article/${a.slug}`}>
@@ -71,15 +64,14 @@ export function SbEntItem({ a }) {
       </Link>
       <div>
         <Link to={`/article/${a.slug}`} className="sb-ent-title">{a.title}</Link>
-        <div className="sb-ent-date">{timeAgo(a.published_at||a.created_at)}</div>
+        <div className="sb-ent-date">{timeAgo(getDate(a))}</div>
       </div>
     </div>
   );
 }
 
-/** Small col item (bottom 3-col sections) */
 export function SmallColItem({ a }) {
-  const img = a.featured_image;
+  const img = getImg(a);
   return (
     <div className="small-col-item">
       <Link to={`/article/${a.slug}`}>
@@ -87,7 +79,7 @@ export function SmallColItem({ a }) {
       </Link>
       <div>
         <Link to={`/article/${a.slug}`} className="small-col-title">{a.title}</Link>
-        <div className="small-col-date">{timeAgo(a.published_at||a.created_at)}</div>
+        <div className="small-col-date">{timeAgo(getDate(a))}</div>
       </div>
     </div>
   );
