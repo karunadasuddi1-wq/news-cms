@@ -61,10 +61,12 @@ export default function SiteHeader({ tickerArticles = [] }) {
       <header className="site-header">
         <div className="container header-inner">
           <Link to="/" className="logo-wrap">
-            <div className="logo-text">
-              <span className="logo-kannada">ಕಯ್ನಾಡ ಸುದ್ದಿ</span>
-            </div>
-          </Link>
+  <img 
+    src="https://i0.wp.com/karunadasuddi.in/wp-content/uploads/2025/06/Karunada-Suddhi-Logo-1.jpeg"
+    alt="ಕರುನಾಡ ಸುದ್ದಿ"
+    style={{ height: '70px', width: 'auto', objectFit: 'contain' }}
+  />
+</Link>  
           <div className="header-banner">
             <div className="ad-placeholder">Advertisement 728×90</div>
           </div>
