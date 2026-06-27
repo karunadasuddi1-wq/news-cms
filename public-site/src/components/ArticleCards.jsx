@@ -27,8 +27,8 @@ export function SecHead({ title, slug }) {
 
 /** Grid 2-col card */
 export function GridCard({ a }) {
-  const img = a.featuredImage || a.featured_image;
-  const cat = a.Category;
+  const img = a.featured_image;
+  const cat = a.category; // lowercase from API
   return (
     <div className="grid-card">
       <Link to={`/article/${a.slug}`}>
@@ -37,7 +37,7 @@ export function GridCard({ a }) {
       <div className="grid-card-body">
         {cat && <div className="grid-card-cat"><Link to={`/category/${cat.slug}`}>{cat.name}</Link></div>}
         <Link to={`/article/${a.slug}`} className="grid-card-title">{a.title}</Link>
-        <div className="grid-card-date">{timeAgo(a.publishedAt||a.createdAt)}</div>
+        <div className="grid-card-date">{timeAgo(a.published_at||a.created_at)}</div>
       </div>
     </div>
   );
@@ -45,8 +45,8 @@ export function GridCard({ a }) {
 
 /** Mini 4-col card */
 export function MiniCard({ a }) {
-  const img = a.featuredImage || a.featured_image;
-  const cat = a.Category;
+  const img = a.featured_image;
+  const cat = a.category;
   return (
     <div className="mini-card">
       <Link to={`/article/${a.slug}`}>
@@ -55,7 +55,7 @@ export function MiniCard({ a }) {
       <div className="mini-card-body">
         {cat && <div className="mini-card-cat">{cat.name}</div>}
         <Link to={`/article/${a.slug}`} className="mini-card-title">{a.title}</Link>
-        <div className="mini-card-date">{timeAgo(a.publishedAt||a.createdAt)}</div>
+        <div className="mini-card-date">{timeAgo(a.published_at||a.created_at)}</div>
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ export function MiniCard({ a }) {
 
 /** Sidebar thumbnail item */
 export function SbEntItem({ a }) {
-  const img = a.featuredImage || a.featured_image;
+  const img = a.featured_image;
   return (
     <div className="sb-ent-item">
       <Link to={`/article/${a.slug}`}>
@@ -71,7 +71,7 @@ export function SbEntItem({ a }) {
       </Link>
       <div>
         <Link to={`/article/${a.slug}`} className="sb-ent-title">{a.title}</Link>
-        <div className="sb-ent-date">{timeAgo(a.publishedAt||a.createdAt)}</div>
+        <div className="sb-ent-date">{timeAgo(a.published_at||a.created_at)}</div>
       </div>
     </div>
   );
@@ -79,7 +79,7 @@ export function SbEntItem({ a }) {
 
 /** Small col item (bottom 3-col sections) */
 export function SmallColItem({ a }) {
-  const img = a.featuredImage || a.featured_image;
+  const img = a.featured_image;
   return (
     <div className="small-col-item">
       <Link to={`/article/${a.slug}`}>
@@ -87,7 +87,7 @@ export function SmallColItem({ a }) {
       </Link>
       <div>
         <Link to={`/article/${a.slug}`} className="small-col-title">{a.title}</Link>
-        <div className="small-col-date">{timeAgo(a.publishedAt||a.createdAt)}</div>
+        <div className="small-col-date">{timeAgo(a.published_at||a.created_at)}</div>
       </div>
     </div>
   );
