@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import ArticlePage from './pages/ArticlePage';
-import CategoryPage from './pages/CategoryPage';
-import SearchPage from './pages/SearchPage';
-import StaticPage from './pages/StaticPage';
+import HomePage from './pages/Home';
+import ArticlePage from './pages/Article';
+import CategoryPage from './pages/Category';
+import SearchPage from './pages/PageView';
+import StaticPage from './pages/PageView';
 import './index.css';
 
 export default function App() {
