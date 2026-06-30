@@ -247,9 +247,14 @@ const saveDraft = asyncHandler(async (req, res) => {
 });
 
 const TRENDING_FEEDS = [
-  { label: 'ಕರ್ನಾಟಕ', url: 'https://news.google.com/rss/search?q=Karnataka&hl=kn&gl=IN&ceid=IN:kn' },
-  { label: 'ಭಾರತ', url: 'https://news.google.com/rss/search?q=India&hl=kn&gl=IN&ceid=IN:kn' },
-  { label: 'ಟ್ರೆಂಡಿಂಗ್', url: 'https://news.google.com/rss?hl=kn&gl=IN&ceid=IN:kn' },
+  { key: 'all', label: 'All', url: 'https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'national', label: 'National', url: 'https://news.google.com/rss/headlines/section/topic/NATION?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'karnataka', label: 'Karnataka', url: 'https://news.google.com/rss/search?q=Karnataka&hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'sports', label: 'Sports', url: 'https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'business', label: 'Business', url: 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'tech', label: 'Tech', url: 'https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'entertainment', label: 'Entertainment', url: 'https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-IN&gl=IN&ceid=IN:en' },
+  { key: 'kannada', label: 'Kannada', url: 'https://news.google.com/rss?hl=kn&gl=IN&ceid=IN:kn' },
 ];
 
 function parseRssItems(xml, limit = 10) {
@@ -270,21 +275,27 @@ function parseRssItems(xml, limit = 10) {
 }
 
 const trending = asyncHandler(async (req, res) => {
-  const feedLabel = req.query.feed || 'ಕರ್ನಾಟಕ';
-  const feed = TRENDING_FEEDS.find(f => f.label === feedLabel) || TRENDING_FEEDS[0];
+  const feedKey = req.query.feed || 'karnataka';
+  const feed = TRENDING_FEEDS.find(f => f.key === feedKey) || TRENDING_FEEDS.find(f => f.key === 'karnataka');
 
   try {
     const result = await httpsRequest(feed.url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KarunadaSuddiBot/1.0)' },
     });
-    console.error('RSS fetch status:', result.status, 'body preview:', result.body.slice(0,200));
     if (result.status !== 200) {
       return res.status(502).json({ error: 'Could not fetch trending news right now.' });
     }
-    const items = parseRssItems(result.body, 15);
-    res.json({ feed: feed.label, items, availableFeeds: TRENDING_FEEDS.map(f => f.label) });
+    const items = parseRssItems(result.body, 20).map(item => ({
+      ...item,
+      category: feed.key,
+    }));
+    res.json({
+      feed: feed.key,
+      items,
+      availableFeeds: TRENDING_FEEDS.map(f => ({ key: f.key, label: f.label })),
+    });
   } catch (err) {
-    console.error("Trending fetch error:", err.message);
+    console.error('Trending fetch error:', err.message);
     res.status(502).json({ error: `Trending news fetch failed: ${err.message}` });
   }
 });
