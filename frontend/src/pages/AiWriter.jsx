@@ -12,6 +12,17 @@ const TONES = [
   { value: 'dramatic', label: 'Dramatic — Punchy, breaking-news style' },
 ];
 
+const FEED_ICONS = {
+  all: '🌐',
+  national: '🇮🇳',
+  karnataka: '🏛',
+  sports: '🏏',
+  business: '💼',
+  tech: '💻',
+  entertainment: '🎬',
+  kannada: '🅺',
+};
+
 const labelCls = 'block text-xs font-mono uppercase tracking-wide text-ink-600 mb-1.5';
 const inputCls = 'w-full border border-paper-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-press-red/20 focus:border-press-red/40';
 
@@ -26,6 +37,7 @@ export default function AiWriter() {
 
   const [fetchingUrl, setFetchingUrl] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingItemLink, setGeneratingItemLink] = useState(null); // tracks which trending item is being rewritten
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -33,22 +45,36 @@ export default function AiWriter() {
 
   const [showTrending, setShowTrending] = useState(false);
   const [trendingItems, setTrendingItems] = useState([]);
-  const [trendingFeed, setTrendingFeed] = useState('ಕರ್ನಾಟಕ');
-  const [trendingFeeds, setTrendingFeeds] = useState(['ಕರ್ನಾಟಕ', 'ಭಾರತ', 'ಟ್ರೆಂಡಿಂಗ್']);
+  const [trendingFeed, setTrendingFeed] = useState('karnataka');
+  const [availableFeeds, setAvailableFeeds] = useState([
+    { key: 'all', label: 'All' },
+    { key: 'national', label: 'National' },
+    { key: 'karnataka', label: 'Karnataka' },
+    { key: 'sports', label: 'Sports' },
+    { key: 'business', label: 'Business' },
+    { key: 'tech', label: 'Tech' },
+    { key: 'entertainment', label: 'Entertainment' },
+    { key: 'kannada', label: 'Kannada' },
+  ]);
   const [loadingTrending, setLoadingTrending] = useState(false);
 
   useEffect(() => {
     client.get('/categories').then(r => setCategories(r.data.categories || []));
   }, []);
 
-  async function handleFetchTrending(feedLabel = trendingFeed) {
+  useEffect(() => {
+    if (showTrending) handleFetchTrending(trendingFeed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTrending]);
+
+  async function handleFetchTrending(feedKey = trendingFeed) {
     setLoadingTrending(true);
     setError('');
     try {
-      const res = await client.get(`/ai-writer/trending?feed=${encodeURIComponent(feedLabel)}`);
+      const res = await client.get(`/ai-writer/trending?feed=${encodeURIComponent(feedKey)}`);
       setTrendingItems(res.data.items || []);
-      setTrendingFeeds(res.data.availableFeeds || trendingFeeds);
-      setTrendingFeed(feedLabel);
+      if (res.data.availableFeeds) setAvailableFeeds(res.data.availableFeeds);
+      setTrendingFeed(feedKey);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -56,56 +82,71 @@ export default function AiWriter() {
     }
   }
 
-  function openTrending() {
-    setShowTrending(true);
-    if (trendingItems.length === 0) handleFetchTrending();
-  }
-
-  async function pickTrendingItem(item) {
-    setShowTrending(false);
-    setMode('url');
-    setSourceUrl(item.link);
-    setError('');
-    await handleFetchUrl(item.link);
-  }
-
   async function handleFetchUrl(urlOverride) {
     const url = urlOverride || sourceUrl;
-    if (!url.trim()) { setError('Please enter a URL.'); return; }
+    if (!url || !url.trim()) { setError('Please enter a URL.'); return null; }
     setFetchingUrl(true);
     setError('');
     try {
       const res = await client.post('/ai-writer/fetch-url', { url });
-      setSourceText(res.data.text || '');
-      setFetchedImage(res.data.image || null);
-      setMode('text');
+      return res.data;
     } catch (err) {
       setError(apiErrorMessage(err));
+      return null;
     } finally {
       setFetchingUrl(false);
     }
   }
 
-  async function handleGenerate() {
-    if (!sourceText.trim() || sourceText.trim().length < 50) {
-      setError('Please paste at least a few sentences of source content.');
-      return;
-    }
+  async function runGenerate(text, srcUrl) {
     setGenerating(true);
     setError('');
     setResult(null);
     try {
       const res = await client.post('/ai-writer/rewrite', {
-        sourceText,
+        sourceText: text,
         tone,
         categoryId: categoryId || null,
-        sourceUrl: sourceUrl || null,
+        sourceUrl: srcUrl || null,
       });
       setResult(res.data);
+      // scroll to result
+      setTimeout(() => {
+        document.getElementById('ai-result-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
       setGenerating(false);
+    }
+  }
+
+  // Manual "Generate" button — uses whatever is in the textarea
+  async function handleGenerate() {
+    if (!sourceText.trim() || sourceText.trim().length < 50) {
+      setError('Please paste at least a few sentences of source content.');
+      return;
+    }
+    await runGenerate(sourceText, sourceUrl);
+  }
+
+  // One-click "Rewrite" from a trending list item: fetch the article AND generate immediately
+  async function handleQuickRewrite(item) {
+    setError('');
+    setGeneratingItemLink(item.link);
+    try {
+      const fetched = await handleFetchUrl(item.link);
+      if (!fetched || !fetched.text) {
+        setGeneratingItemLink(null);
+        return;
+      }
+      setSourceUrl(item.link);
+      setSourceText(fetched.text);
+      setFetchedImage(fetched.image || null);
+      setMode('text');
+      await runGenerate(fetched.text, item.link);
+    } finally {
+      setGeneratingItemLink(null);
     }
   }
 
@@ -134,7 +175,7 @@ export default function AiWriter() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-8 py-10 max-w-4xl mx-auto">
       <h1 className="font-display font-bold text-2xl text-ink-900 mb-1">✦ AI Writer</h1>
       <p className="text-sm text-ink-500 mb-6">
         Paste any article in any language. The AI will completely rewrite it in original Kannada —
@@ -143,7 +184,91 @@ export default function AiWriter() {
 
       <ErrorBanner message={error} />
 
-      {/* Mode tabs */}
+      {/* ── Trending toggle bar ── */}
+      <button
+        type="button"
+        onClick={() => setShowTrending(s => !s)}
+        className="w-full bg-ink-900 hover:bg-ink-800 text-white text-sm font-semibold py-3 rounded-t transition-colors flex items-center justify-center gap-2"
+        style={{ borderRadius: showTrending ? '6px 6px 0 0' : '6px' }}
+      >
+        🔥 {showTrending ? 'Hide Trending News' : 'Show Trending News'} — Pick &amp; Rewrite
+      </button>
+
+      {showTrending && (
+        <div className="border border-t-0 border-paper-200 rounded-b mb-6 bg-white overflow-hidden">
+          {/* Feed tabs */}
+          <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-paper-100 overflow-x-auto">
+            {availableFeeds.map(f => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => handleFetchTrending(f.key)}
+                className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  f.key === trendingFeed
+                    ? 'bg-ink-900 text-white'
+                    : 'bg-paper-50 border border-paper-200 text-ink-600 hover:bg-paper-100'
+                }`}
+              >
+                <span>{FEED_ICONS[f.key] || '•'}</span>
+                {f.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleFetchTrending(trendingFeed)}
+              title="Refresh"
+              className="ml-auto shrink-0 w-7 h-7 flex items-center justify-center rounded text-ink-400 hover:text-ink-700 hover:bg-paper-50 transition-colors"
+            >
+              ⟳
+            </button>
+          </div>
+
+          {/* Items */}
+          <div className="max-h-[420px] overflow-y-auto">
+            {loadingTrending && (
+              <div className="p-8 text-center text-ink-400 text-sm">Loading…</div>
+            )}
+            {!loadingTrending && trendingItems.length === 0 && (
+              <div className="p-8 text-center text-ink-400 text-sm">No trending items found.</div>
+            )}
+            {!loadingTrending && trendingItems.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-start justify-between gap-4 px-4 py-3 border-b border-paper-100 last:border-b-0 hover:bg-paper-50 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[11px] font-mono uppercase tracking-wide text-press-red bg-press-red/10 border border-press-red/20 rounded px-1.5 py-0.5">
+                      {item.source || 'News'}
+                    </span>
+                    <span className="text-[11px] font-mono uppercase tracking-wide text-ink-400 bg-paper-100 rounded px-1.5 py-0.5">
+                      {item.category || trendingFeed}
+                    </span>
+                    {item.pubDate && (
+                      <span className="text-[11px] text-ink-400">
+                        {new Date(item.pubDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-ink-900 leading-snug">{item.title}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleQuickRewrite(item)}
+                  disabled={generatingItemLink === item.link || generating}
+                  className="shrink-0 flex items-center gap-1.5 bg-ink-900 hover:bg-ink-700 text-white text-xs font-semibold px-3 py-2 rounded transition-colors disabled:opacity-60"
+                >
+                  {generatingItemLink === item.link
+                    ? <><span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />Rewriting…</>
+                    : <>✦ Rewrite</>}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Manual paste / URL section ── */}
       <div className="flex gap-2 mb-4">
         <button
           type="button"
@@ -175,7 +300,14 @@ export default function AiWriter() {
           />
           <button
             type="button"
-            onClick={() => handleFetchUrl()}
+            onClick={async () => {
+              const fetched = await handleFetchUrl();
+              if (fetched) {
+                setSourceText(fetched.text || '');
+                setFetchedImage(fetched.image || null);
+                setMode('text');
+              }
+            }}
             disabled={fetchingUrl}
             className="whitespace-nowrap bg-ink-900 hover:bg-ink-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-60"
           >
@@ -186,7 +318,7 @@ export default function AiWriter() {
 
       <label className={labelCls}>Source content</label>
       <textarea
-        className={`${inputCls} min-h-[180px] mb-4`}
+        className={`${inputCls} min-h-[160px] mb-4`}
         placeholder="Paste the source article here in any language (English, Hindi, Telugu, Tamil, etc.)…"
         value={sourceText}
         onChange={e => setSourceText(e.target.value)}
@@ -208,7 +340,7 @@ export default function AiWriter() {
         </div>
       </div>
 
-      <div className="bg-wire-teal/5 border border-wire-teal/20 rounded p-4 mb-4">
+      <div className="bg-wire-teal/5 border border-wire-teal/20 rounded p-4 mb-5">
         <p className="text-xs font-mono uppercase tracking-wide text-wire-teal-dark font-bold mb-2">✓ What the AI does</p>
         <ul className="space-y-1 text-xs text-ink-600">
           <li>Completely rewrites in original Kannada — not a translation</li>
@@ -217,14 +349,6 @@ export default function AiWriter() {
           <li>Generates SEO title, meta description, and tags</li>
         </ul>
       </div>
-
-      <button
-        type="button"
-        onClick={openTrending}
-        className="w-full bg-paper-50 hover:bg-paper-100 border border-paper-200 text-ink-700 text-sm font-medium py-2.5 rounded transition-colors mb-4"
-      >
-        🔥 Show Trending News — Pick &amp; Rewrite
-      </button>
 
       <button
         type="button"
@@ -237,9 +361,9 @@ export default function AiWriter() {
           : <>✦ Generate Kannada Article</>}
       </button>
 
-      {/* Result preview */}
+      {/* ── Result preview ── */}
       {result && (
-        <div className="mt-8 border border-paper-200 rounded p-5 bg-white">
+        <div id="ai-result-section" className="mt-8 border border-paper-200 rounded p-5 bg-white">
           <h2 className="font-display font-bold text-lg text-ink-900 mb-4">Generated Draft</h2>
 
           <label className={labelCls}>Title</label>
@@ -297,6 +421,10 @@ export default function AiWriter() {
             </div>
           )}
 
+          {!categoryId && (
+            <p className="text-xs text-press-red mb-3">⚠ Select a category above before saving.</p>
+          )}
+
           <button
             type="button"
             onClick={handleSaveDraft}
@@ -305,53 +433,6 @@ export default function AiWriter() {
           >
             {saving ? 'Saving…' : '💾 Save as Draft'}
           </button>
-        </div>
-      )}
-
-      {/* Trending modal */}
-      {showTrending && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowTrending(false)}>
-          <div className="bg-white rounded-lg w-[90%] max-w-lg max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-paper-200">
-              <h3 className="font-display font-bold text-base text-ink-900">🔥 Trending News</h3>
-              <button type="button" onClick={() => setShowTrending(false)} className="text-ink-400 hover:text-ink-700 text-lg">✕</button>
-            </div>
-
-            <div className="flex gap-2 px-5 pt-3">
-              {trendingFeeds.map(f => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => handleFetchTrending(f)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    f === trendingFeed ? 'bg-ink-900 text-white' : 'bg-white border border-paper-200 text-ink-600 hover:bg-paper-50'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {loadingTrending && <div className="p-6 text-center text-ink-400 text-sm">Loading…</div>}
-
-            {!loadingTrending && (
-              <div className="overflow-y-auto px-5 pb-5 pt-3">
-                {trendingItems.map((item, i) => (
-                  <div
-                    key={i}
-                    onClick={() => pickTrendingItem(item)}
-                    className="py-2.5 border-b border-paper-100 last:border-b-0 cursor-pointer hover:bg-paper-50 -mx-2 px-2 rounded transition-colors"
-                  >
-                    <div className="text-sm font-medium text-ink-900 leading-snug">{item.title}</div>
-                    <div className="text-xs text-ink-400 mt-0.5">{item.source}</div>
-                  </div>
-                ))}
-                {trendingItems.length === 0 && (
-                  <div className="p-6 text-center text-ink-400 text-sm">No trending items found.</div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>
