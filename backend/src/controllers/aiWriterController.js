@@ -19,7 +19,7 @@ function httpsRequest(url, options = {}, redirectCount = 0) {
       path: parsed.pathname + parsed.search,
       method: options.method || 'GET',
       headers: options.headers || {},
-      timeout: 30000,
+      timeout: options.timeoutMs || 30000,
     };
     const req = https.request(opts, res => {
       // Follow redirects (Google News RSS uses 301/302/307/308)
@@ -56,6 +56,7 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     }),
+    timeoutMs: 90000,
   });
   console.log('callClaude: response status:', res.status, 'body preview:', res.body.slice(0, 300));
 
