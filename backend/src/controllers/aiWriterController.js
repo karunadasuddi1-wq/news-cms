@@ -116,8 +116,12 @@ const fetchUrl = asyncHandler(async (req, res) => {
   let html;
   try {
     const result = await httpsRequest(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KarunadaSuddiBot/1.0)' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
     });
+    console.log('fetchUrl status:', result.status, 'bodyLength:', result.body.length);
     if (result.status >= 400) {
       return res.status(422).json({ error: `Source site returned status ${result.status}.` });
     }
