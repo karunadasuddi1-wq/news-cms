@@ -3,14 +3,13 @@ const { list, getOne, create, update, setStatus, remove } = require('../controll
 const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 
-// Public routes — no auth needed
+router.use(requireAuth);
+
 router.get('/', list);
 router.get('/:id', getOne);
-
-// Protected routes — require auth
-router.post('/', requireAuth, create);
-router.put('/:id', requireAuth, update);
-router.patch('/:id/status', requireAuth, setStatus);
-router.delete('/:id', requireAuth, remove);
+router.post('/', create);
+router.put('/:id', update);
+router.patch('/:id/status', setStatus);
+router.delete('/:id', remove);
 
 module.exports = router;
