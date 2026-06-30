@@ -185,7 +185,7 @@ const fetchUrl = asyncHandler(async (req, res) => {
   const text = extractArticleText(html);
   const image = extractImage(html);
 
-  console.log('fetchUrl: extracted title length', title.length, 'text length', text.length);
+  console.log('fetchUrl: title:', JSON.stringify(title), 'text:', JSON.stringify(text.slice(0, 200)));
 
   if (!text || text.length < 60) {
     return res.status(422).json({
