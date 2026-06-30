@@ -262,6 +262,7 @@ const trending = asyncHandler(async (req, res) => {
     const result = await httpsRequest(feed.url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KarunadaSuddiBot/1.0)' },
     });
+    console.error('RSS fetch status:', result.status, 'body preview:', result.body.slice(0,200));
     if (result.status !== 200) {
       return res.status(502).json({ error: 'Could not fetch trending news right now.' });
     }
