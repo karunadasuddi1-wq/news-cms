@@ -6,8 +6,12 @@ const { generateUniqueSlug } = require('../utils/slug');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
 
-function httpsRequest(url, options = {}) {
+function httpsRequest(url, options = {}, redirectCount = 0) {
   return new Promise((resolve, reject) => {
+    if (redirectCount > 5) {
+      reject(new Error('Too many redirects'));
+      return;
+    }
     const parsed = new URL(url);
     const opts = {
       hostname: parsed.hostname,
@@ -18,6 +22,13 @@ function httpsRequest(url, options = {}) {
       timeout: 30000,
     };
     const req = https.request(opts, res => {
+      // Follow redirects (Google News RSS uses 301/302/307/308)
+      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+        res.resume(); // discard body
+        const nextUrl = new URL(res.headers.location, url).toString();
+        resolve(httpsRequest(nextUrl, options, redirectCount + 1));
+        return;
+      }
       let data = '';
       res.on('data', c => (data += c));
       res.on('end', () => resolve({ status: res.statusCode, body: data, headers: res.headers }));
