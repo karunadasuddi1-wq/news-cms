@@ -268,6 +268,7 @@ const trending = asyncHandler(async (req, res) => {
     const items = parseRssItems(result.body, 15);
     res.json({ feed: feed.label, items, availableFeeds: TRENDING_FEEDS.map(f => f.label) });
   } catch (err) {
+    console.error("Trending fetch error:", err.message);
     res.status(502).json({ error: `Trending news fetch failed: ${err.message}` });
   }
 });
