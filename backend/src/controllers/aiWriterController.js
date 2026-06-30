@@ -22,9 +22,8 @@ function httpsRequest(url, options = {}, redirectCount = 0) {
       timeout: options.timeoutMs || 30000,
     };
     const req = https.request(opts, res => {
-      // Follow redirects (Google News RSS uses 301/302/307/308)
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        res.resume(); // discard body
+        res.resume();
         const nextUrl = new URL(res.headers.location, url).toString();
         resolve(httpsRequest(nextUrl, options, redirectCount + 1));
         return;
@@ -85,13 +84,64 @@ function stripHtml(html) {
 }
 
 function extractArticleText(html) {
-  const paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+  let paragraphs = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
     .map(m => stripHtml(m[1]))
     .filter(t => t.length > 40);
-  if (paragraphs.length === 0) {
-    return stripHtml(html).slice(0, 8000);
+
+  if (paragraphs.join(' ').length >= 150) {
+    return paragraphs.join('\n\n').slice(0, 8000);
   }
-  return paragraphs.join('\n\n').slice(0, 8000);
+
+  const containerMatch = html.match(
+    /<(?:div|section|article)[^>]*(?:class|id)=["'][^"']*(?:article-body|articleBody|story-body|storyBody|post-content|entry-content|article-content|content-body|articleContent)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section|article)>/i
+  );
+  if (containerMatch) {
+    const innerParagraphs = [...containerMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map(m => stripHtml(m[1]))
+      .filter(t => t.length > 30);
+    if (innerParagraphs.join(' ').length >= 150) {
+      return innerParagraphs.join('\n\n').slice(0, 8000);
+    }
+    const containerText = stripHtml(containerMatch[1]);
+    if (containerText.length >= 150) {
+      return containerText.slice(0, 8000);
+    }
+  }
+
+  const ldJsonBlocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const block of ldJsonBlocks) {
+    try {
+      const data = JSON.parse(block[1].trim());
+      const candidates = Array.isArray(data) ? data : [data];
+      for (const item of candidates) {
+        if (item.articleBody && item.articleBody.length >= 150) {
+          return stripHtml(item.articleBody).slice(0, 8000);
+        }
+        if (Array.isArray(item['@graph'])) {
+          for (const g of item['@graph']) {
+            if (g.articleBody && g.articleBody.length >= 150) {
+              return stripHtml(g.articleBody).slice(0, 8000);
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore malformed JSON-LD
+    }
+  }
+
+  const metaDesc = html.match(/<meta[^>]+(?:property=["']og:description["']|name=["']description["'])[^>]+content=["']([^"']+)["']/i);
+
+  if (paragraphs.length > 0) {
+    const fallback = paragraphs.join('\n\n');
+    if (fallback.length >= 60) return fallback.slice(0, 8000);
+  }
+
+  if (metaDesc && metaDesc[1] && metaDesc[1].length >= 60) {
+    return stripHtml(metaDesc[1]).slice(0, 8000);
+  }
+
+  return stripHtml(html).slice(0, 8000);
 }
 
 function extractTitle(html) {
@@ -127,6 +177,7 @@ const fetchUrl = asyncHandler(async (req, res) => {
     }
     html = result.body;
   } catch (err) {
+    console.error('fetchUrl error:', err.message);
     return res.status(422).json({ error: `Could not fetch that URL: ${err.message}` });
   }
 
@@ -134,8 +185,12 @@ const fetchUrl = asyncHandler(async (req, res) => {
   const text = extractArticleText(html);
   const image = extractImage(html);
 
-  if (!text || text.length < 100) {
-    return res.status(422).json({ error: 'Could not extract readable article content from that URL.' });
+  console.log('fetchUrl: extracted title length', title.length, 'text length', text.length);
+
+  if (!text || text.length < 60) {
+    return res.status(422).json({
+      error: 'Could not extract readable article content from that URL. Try pasting the text directly instead.',
+    });
   }
 
   res.json({ title, text, image, sourceUrl: url });
