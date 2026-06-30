@@ -12,6 +12,7 @@ const articleRoutes = require('./routes/articles');
 const dashboardRoutes = require('./routes/dashboard');
 const seoRoutes = require('./routes/seo');
 const analyticsRoutes = require('./routes/analytics');
+const aiWriterRoutes = require('./routes/aiWriter');
 const pageRoutes = require('./routes/pages');
 const { listPublic: listPublicPages, getPublic: getPublicPage } = require('./controllers/pageController');
 const publicRoutes = require('./routes/public');
@@ -60,6 +61,7 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai-writer', aiWriterRoutes);
 app.use('/api/pages', pageRoutes);
 
 // Public pages (no auth)
