@@ -41,6 +41,8 @@ function httpsRequest(url, options = {}, redirectCount = 0) {
 }
 
 async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
+  console.log('callClaude: API key present?', !!ANTHROPIC_API_KEY, 'length:', ANTHROPIC_API_KEY ? ANTHROPIC_API_KEY.length : 0);
+  console.log('callClaude: calling Anthropic API...');
   const res = await httpsRequest('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -55,6 +57,7 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
       messages: [{ role: 'user', content: userPrompt }],
     }),
   });
+  console.log('callClaude: response status:', res.status, 'body preview:', res.body.slice(0, 300));
 
   let parsed;
   try { parsed = JSON.parse(res.body); } catch { throw new Error('Claude API returned invalid JSON'); }
