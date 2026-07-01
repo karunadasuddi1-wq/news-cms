@@ -245,6 +245,21 @@ const setStatus = asyncHandler(async (req, res) => {
   }
 
   await article.save();
+
+  // Auto-sync to WordPress when published
+  if (nextStatus === 'published') {
+    try {
+      const { syncToWordPress } = require('./wpSyncController');
+      const { Category } = require('../models');
+      const cat = await Category.findByPk(article.categoryId);
+      const { wpPostId } = await syncToWordPress(article, cat ? cat.slug : null);
+      await Article.update({ wpPostId }, { where: { id: article.id } });
+      console.log('[wp-sync] Auto-synced article', article.id, 'to WP post', wpPostId);
+    } catch (err) {
+      console.error('[wp-sync] Auto-sync failed (non-fatal):', err.message);
+    }
+  }
+
   const full = await Article.findByPk(article.id, { include: AUTHOR_INCLUDE });
   res.json({ article: full });
 });

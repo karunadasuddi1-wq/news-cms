@@ -97,6 +97,11 @@ Article.init(
         }
       },
     },
+    wpPostId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'wp_post_id',
+    },
     scheduledAt: {
       type: DataTypes.DATE,
       allowNull: true,
