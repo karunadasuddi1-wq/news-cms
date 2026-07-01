@@ -34,11 +34,11 @@ export default function Layout({ children }) {
       <div className="px-6 py-7 border-b border-white/10 flex items-start justify-between">
         <div>
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display font-black text-2xl tracking-tight">NEWSROOM</span>
+            <span className="font-display font-black text-2xl tracking-tight">{import.meta.env.VITE_SITE_SHORT_NAME || 'NEWSROOM'}</span>
             <span className="text-press-red text-2xl leading-none">.</span>
           </div>
           <p className="mt-1 text-[11px] font-mono uppercase tracking-[0.18em] text-ink-400">
-            ಕನ್ನಡದುನಿಯಾ CMS
+            {import.meta.env.VITE_SITE_NAME || 'ಕನ್ನಡದುನಿಯಾ CMS'}
           </p>
         </div>
         {/* Close button — mobile only */}
@@ -125,7 +125,7 @@ export default function Layout({ children }) {
             </svg>
           </button>
           <div className="flex items-baseline gap-1">
-            <span className="font-display font-black text-lg tracking-tight">NEWSROOM</span>
+            <span className="font-display font-black text-lg tracking-tight">{import.meta.env.VITE_SITE_SHORT_NAME || 'NEWSROOM'}</span>
             <span className="text-press-red text-lg leading-none">.</span>
           </div>
         </header>
