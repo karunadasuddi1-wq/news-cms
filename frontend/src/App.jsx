@@ -10,6 +10,7 @@ import Users from './pages/Users';
 import Analytics from './pages/Analytics';
 import Pages from './pages/Pages';
 import AiWriter from './pages/AiWriter';
+import Newsroom from './pages/Newsroom';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/pages" element={<ProtectedRoute><Pages /></ProtectedRoute>} />
           <Route path="/ai-writer" element={<ProtectedRoute><AiWriter /></ProtectedRoute>} />
+          <Route path="/newsroom" element={<ProtectedRoute><Newsroom /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
