@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const config = require('./config/env');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -52,9 +53,29 @@ if (config.nodeEnv !== 'test') {
   app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 }
 
+// Rate limiter for login — max 10 attempts per 15 minutes per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// General API rate limiter — max 200 requests per minute per IP
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { error: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', dialect: config.dbDialect }));
 
+app.use('/api', apiLimiter);
 app.use('/api/public', publicRoutes);
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
