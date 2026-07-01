@@ -333,7 +333,7 @@ export default function ArticleEditor() {
   const publicUrl = `https://kannadadunia.com/${catSlug}/${form.slug || '(slug)'}`;
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-3xl mx-auto">
       <div className="mb-6">
         <Link to="/articles" className="text-xs font-mono uppercase tracking-wide text-ink-400 hover:text-press-red">← Back to articles</Link>
       </div>

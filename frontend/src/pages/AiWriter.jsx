@@ -175,7 +175,7 @@ export default function AiWriter() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-4xl mx-auto">
       <h1 className="font-display font-bold text-2xl text-ink-900 mb-1">✦ AI Writer</h1>
       <p className="text-sm text-ink-500 mb-6">
         Paste any article in any language. The AI will completely rewrite it in original Kannada —
@@ -324,7 +324,7 @@ export default function AiWriter() {
         onChange={e => setSourceText(e.target.value)}
       />
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div>
           <label className={labelCls}>Tone</label>
           <select className={inputCls} value={tone} onChange={e => setTone(e.target.value)}>

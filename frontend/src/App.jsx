@@ -11,6 +11,7 @@ import Analytics from './pages/Analytics';
 import Pages from './pages/Pages';
 import AiWriter from './pages/AiWriter';
 import Newsroom from './pages/Newsroom';
+import Layout from './components/Layout';
 
 export default function App() {
   return (
@@ -18,15 +19,15 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/articles" element={<ProtectedRoute><Articles /></ProtectedRoute>} />
-          <Route path="/articles/:id" element={<ProtectedRoute><ArticleEditor /></ProtectedRoute>} />
-          <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-          <Route path="/pages" element={<ProtectedRoute><Pages /></ProtectedRoute>} />
-          <Route path="/ai-writer" element={<ProtectedRoute><AiWriter /></ProtectedRoute>} />
-          <Route path="/newsroom" element={<ProtectedRoute><Newsroom /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+          <Route path="/articles" element={<ProtectedRoute><Layout><Articles /></Layout></ProtectedRoute>} />
+          <Route path="/articles/:id" element={<ProtectedRoute><Layout><ArticleEditor /></Layout></ProtectedRoute>} />
+          <Route path="/categories" element={<ProtectedRoute><Layout><Categories /></Layout></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
+          <Route path="/pages" element={<ProtectedRoute><Layout><Pages /></Layout></ProtectedRoute>} />
+          <Route path="/ai-writer" element={<ProtectedRoute><Layout><AiWriter /></Layout></ProtectedRoute>} />
+          <Route path="/newsroom" element={<ProtectedRoute><Layout><Newsroom /></Layout></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute adminOnly><Layout><Users /></Layout></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

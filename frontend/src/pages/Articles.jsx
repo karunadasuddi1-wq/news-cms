@@ -66,7 +66,7 @@ export default function Articles() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-6xl mx-auto">
       <div className="flex items-end justify-between mb-6 pb-6 border-b-2 border-ink-900">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400 mb-1">

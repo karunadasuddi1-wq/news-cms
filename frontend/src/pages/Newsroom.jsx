@@ -147,7 +147,7 @@ export default function Newsroom() {
   }, [scored]);
 
   return (
-    <div className="px-8 py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-6xl mx-auto">
       <div className="mb-6">
         <h1 className="font-display font-bold text-2xl text-ink-900 mb-1">📊 Newsroom Dashboard</h1>
         <p className="text-sm text-ink-500">Google Discover &amp; News readiness scores for all published articles.</p>
@@ -157,7 +157,7 @@ export default function Newsroom() {
 
       {/* KPI row */}
       {!loading && (
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <KpiCard label="Total Articles" value={kpis.total} />
           <KpiCard label="Discover Ready" value={kpis.ready} sub={`${Math.round((kpis.ready / kpis.total) * 100)}% of total`} color="#2e6f6b" />
           <KpiCard label="Avg Score" value={`${kpis.avgScore}%`} color={kpis.avgScore >= 80 ? '#2e6f6b' : kpis.avgScore >= 50 ? '#c98a2c' : '#b23a2e'} />
@@ -180,7 +180,7 @@ export default function Newsroom() {
       )}
 
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
         <input
           className="border border-paper-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-press-red/20 focus:border-press-red/40 flex-1 min-w-48"
           placeholder="Search articles…"
