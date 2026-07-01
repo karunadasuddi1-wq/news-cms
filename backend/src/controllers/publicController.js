@@ -3,7 +3,7 @@ const { Article, User, Category } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 
 const INCLUDE = [
-  { model: User, as: 'author', attributes: ['id', 'name'] },
+  { model: User, as: 'author', attributes: ['id', 'name', 'bio', 'avatar', 'socialLinks'] },
   { model: Category, as: 'category', attributes: ['id', 'name', 'slug'] },
 ];
 
