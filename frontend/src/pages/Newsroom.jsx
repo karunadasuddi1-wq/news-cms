@@ -74,6 +74,7 @@ export default function Newsroom() {
   const [sort, setSort] = useState('score_asc'); // default: worst first (actionable)
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [authorFilter, setAuthorFilter] = useState('all');
   const [page, setPage] = useState(1);
   const PER_PAGE = 25;
 
@@ -95,8 +96,21 @@ export default function Newsroom() {
 
   const scored = useMemo(() => articles.map(a => ({ ...a, _score: scoreArticle(a) })), [articles]);
 
+  const authors = useMemo(() => {
+    const map = {};
+    articles.forEach(a => {
+      const id = a.author?.id || a.authorId;
+      const name = a.author?.name || a.author?.email || 'Unknown';
+      if (id) map[id] = name;
+    });
+    return Object.entries(map).map(([id, name]) => ({ id, name }));
+  }, [articles]);
+
   const filtered = useMemo(() => {
     let list = scored;
+    if (authorFilter !== 'all') {
+      list = list.filter(a => String(a.author?.id || a.authorId) === String(authorFilter));
+    }
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(a => (a.title || '').toLowerCase().includes(q));
@@ -186,6 +200,14 @@ export default function Newsroom() {
           onChange={e => setSort(e.target.value)}
         >
           {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select
+          className="border border-paper-200 rounded px-3 py-2 text-sm bg-white"
+          value={authorFilter}
+          onChange={e => { setAuthorFilter(e.target.value); setPage(1); }}
+        >
+          <option value="all">All authors</option>
+          {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>
         <span className="text-xs font-mono text-ink-400 self-center">{filtered.length} articles</span>
       </div>
