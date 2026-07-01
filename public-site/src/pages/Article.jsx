@@ -76,6 +76,29 @@ export default function ArticlePage() {
                   </div>
                   {img && <img src={img} alt={article.title} className="art-hero-img"/>}
                   <div className="art-body" dangerouslySetInnerHTML={{__html: article.content||''}}/>
+
+                  {author && (author.bio || author.avatar) && (
+                    <div className="author-bio-box" style={{display:'flex',alignItems:'flex-start',gap:16,background:'#f9f6f1',border:'1px solid #e8e2d9',borderRadius:8,padding:'16px 20px',margin:'24px 0'}}>
+                      {author.avatar && (
+                        <img src={author.avatar} alt={author.name} style={{width:64,height:64,borderRadius:'50%',objectFit:'cover',flexShrink:0,border:'2px solid #e8e2d9'}}/>
+                      )}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                          <span style={{fontWeight:700,fontSize:15,color:'#1a1a1a'}}>{author.name}</span>
+                          {author.role && <span style={{fontSize:11,fontFamily:'monospace',textTransform:'uppercase',letterSpacing:'0.1em',color:'#888',background:'#eee',padding:'2px 8px',borderRadius:3}}>{author.role}</span>}
+                        </div>
+                        {author.bio && <p style={{fontSize:13,color:'#555',lineHeight:1.6,margin:0}}>{author.bio}</p>}
+                        {author.socialLinks && (
+                          <div style={{display:'flex',gap:12,marginTop:8}}>
+                            {author.socialLinks.twitter && <a href={author.socialLinks.twitter} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:'#c0392b',textDecoration:'none'}}>𝕏 Twitter</a>}
+                            {author.socialLinks.instagram && <a href={author.socialLinks.instagram} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:'#c0392b',textDecoration:'none'}}>📸 Instagram</a>}
+                            {author.socialLinks.facebook && <a href={author.socialLinks.facebook} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:'#c0392b',textDecoration:'none'}}>👍 Facebook</a>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="ad-strip" style={{padding:'12px 20px'}}>
                     <div style={{display:'inline-block',background:'#f0f0f0',border:'1px dashed #ccc',padding:'6px 20px',borderRadius:3,fontSize:11,color:'#aaa'}}>Advertisement</div>
                   </div>
