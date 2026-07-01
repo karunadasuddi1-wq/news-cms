@@ -38,6 +38,13 @@ export default function Users() {
     const payload = {
       name: form.name.value,
       role: form.role.value,
+      bio: form.bio.value || null,
+      avatar: form.avatar.value || null,
+      socialLinks: {
+        twitter: form.twitter.value || null,
+        instagram: form.instagram.value || null,
+        facebook: form.facebook.value || null,
+      },
     };
     if (!editing.id) {
       payload.email = form.email.value;
@@ -214,6 +221,38 @@ export default function Users() {
                 placeholder={editing.id ? '••••••••' : 'At least 8 characters'}
               />
             </label>
+
+            <label className="block mb-4">
+              <span className="block text-xs font-mono uppercase tracking-wide text-ink-600 mb-1.5">Bio</span>
+              <textarea
+                name="bio"
+                rows={3}
+                defaultValue={editing.bio || ''}
+                placeholder="Short author bio shown on articles..."
+                className="w-full px-3 py-2.5 rounded border border-paper-200 bg-white focus:outline-none focus:ring-2 focus:ring-press-red/40 focus:border-press-red text-ink-900 text-sm"
+              />
+            </label>
+
+            <label className="block mb-4">
+              <span className="block text-xs font-mono uppercase tracking-wide text-ink-600 mb-1.5">Avatar URL</span>
+              <input
+                name="avatar"
+                type="url"
+                defaultValue={editing.avatar || ''}
+                placeholder="https://example.com/photo.jpg"
+                className="w-full px-3 py-2.5 rounded border border-paper-200 bg-white focus:outline-none focus:ring-2 focus:ring-press-red/40 focus:border-press-red text-ink-900"
+              />
+              {editing.avatar && <img src={editing.avatar} alt="" className="mt-2 h-12 w-12 rounded-full object-cover border border-paper-200" />}
+            </label>
+
+            <div className="mb-5">
+              <span className="block text-xs font-mono uppercase tracking-wide text-ink-600 mb-2">Social Links</span>
+              <div className="space-y-2">
+                <input name="twitter" type="url" defaultValue={editing.socialLinks?.twitter || ''} placeholder="Twitter/X URL" className="w-full px-3 py-2 rounded border border-paper-200 bg-white focus:outline-none focus:ring-2 focus:ring-press-red/40 text-ink-900 text-sm" />
+                <input name="instagram" type="url" defaultValue={editing.socialLinks?.instagram || ''} placeholder="Instagram URL" className="w-full px-3 py-2 rounded border border-paper-200 bg-white focus:outline-none focus:ring-2 focus:ring-press-red/40 text-ink-900 text-sm" />
+                <input name="facebook" type="url" defaultValue={editing.socialLinks?.facebook || ''} placeholder="Facebook URL" className="w-full px-3 py-2 rounded border border-paper-200 bg-white focus:outline-none focus:ring-2 focus:ring-press-red/40 text-ink-900 text-sm" />
+              </div>
+            </div>
 
             <button
               type="submit"
