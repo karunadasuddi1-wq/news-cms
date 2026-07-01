@@ -78,12 +78,61 @@ function wpRequest(path, options = {}) {
 async function sideloadImage(imageUrl, title) {
   if (!imageUrl) return null;
   try {
-    const res = await wpRequest('/media', {
-      method: 'POST',
-      body: { source_url: imageUrl, title: title || 'Featured Image', alt_text: title || '' },
+    // Download image as binary
+    const imageRes = await new Promise((resolve, reject) => {
+      const parsed = new URL(imageUrl);
+      const lib = parsed.protocol === 'https:' ? https : http;
+      lib.get(imageUrl, { headers: { 'User-Agent': 'KarunadaSuddi-CMS/1.0' } }, res => {
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => resolve({ buffer: Buffer.concat(chunks), headers: res.headers, status: res.statusCode }));
+      }).on('error', reject);
     });
-    if (res.status === 201 && res.data.id) return res.data.id;
-    console.warn('[wp-sync] Could not sideload image:', res.status);
+
+    if (imageRes.status !== 200) {
+      console.warn('[wp-sync] Image download failed:', imageRes.status);
+      return null;
+    }
+
+    const contentType = imageRes.headers['content-type'] || 'image/jpeg';
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+    const filename = `${(title || 'image').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 50)}.${ext}`;
+
+    // Upload binary to WordPress media library
+    const wpUrl = new URL(`${WP_SITE_URL}/wp-json/wp/v2/media`);
+    const uploadRes = await new Promise((resolve, reject) => {
+      const opts = {
+        hostname: wpUrl.hostname,
+        port: 443,
+        path: wpUrl.pathname,
+        method: 'POST',
+        headers: {
+          'Authorization': wpAuthHeader(),
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Type': contentType,
+          'Content-Length': imageRes.buffer.length,
+        },
+        timeout: 30000,
+      };
+      const req = https.request(opts, res => {
+        let data = '';
+        res.on('data', c => (data += c));
+        res.on('end', () => {
+          try { resolve({ status: res.statusCode, data: JSON.parse(data) }); }
+          catch { resolve({ status: res.statusCode, data }); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Upload timed out')); });
+      req.write(imageRes.buffer);
+      req.end();
+    });
+
+    if (uploadRes.status === 201 && uploadRes.data.id) {
+      console.log('[wp-sync] Image uploaded to WP, ID:', uploadRes.data.id);
+      return uploadRes.data.id;
+    }
+    console.warn('[wp-sync] Image upload failed:', uploadRes.status, JSON.stringify(uploadRes.data).slice(0, 200));
     return null;
   } catch (err) {
     console.warn('[wp-sync] Image sideload error:', err.message);
