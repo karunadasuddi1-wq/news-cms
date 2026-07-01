@@ -17,6 +17,89 @@ const emptyForm = {
   scheduledAt: '',
 };
 
+
+function DiscoverMeter({ form, wordCount }) {
+  const title = form.title || '';
+  const seoTitle = form.seoTitle || '';
+  const content = form.content || '';
+  const checks = [
+    {
+      label: 'Title length (40–70 chars)',
+      pass: title.length >= 40 && title.length <= 70,
+      hint: title.length < 40 ? 'Too short — expand the title' : title.length > 70 ? 'Too long — Google may truncate' : '',
+    },
+    {
+      label: 'Featured image set (required for Discover)',
+      pass: !!form.featuredImage,
+      hint: 'Upload a high-quality image — Discover requires one',
+    },
+    {
+      label: 'Content length (600+ words for Discover)',
+      pass: wordCount >= 600,
+      hint: wordCount < 300 ? 'Too short for News indexing' : wordCount < 600 ? `${600 - wordCount} more words needed for Discover` : '',
+    },
+    {
+      label: 'Category assigned',
+      pass: !!form.categoryId,
+      hint: 'Set a category before publishing',
+    },
+    {
+      label: 'SEO title set',
+      pass: seoTitle.length >= 30,
+      hint: 'Add an SEO title — Google News uses this as the headline',
+    },
+    {
+      label: 'Meta description set',
+      pass: (form.seoDescription || '').length >= 70,
+      hint: 'Add a meta description for better CTR in Discover',
+    },
+    {
+      label: 'Not marked no-index',
+      pass: !form.noIndex,
+      hint: 'No-index will prevent Google from indexing this article',
+    },
+    {
+      label: 'Kannada content detected',
+      pass: /[\u0C80-\u0CFF]/.test(content),
+      hint: 'Content should contain Kannada script for regional ranking',
+    },
+  ];
+  const score = checks.filter(c => c.pass).length;
+  const pct = Math.round((score / checks.length) * 100);
+  const color = pct >= 80 ? '#2e6f6b' : pct >= 50 ? '#c98a2c' : '#b23a2e';
+  const badge = pct >= 80 ? 'Discover Ready' : pct >= 50 ? 'Needs Work' : 'Not Ready';
+
+  return (
+    <div className="mt-3 p-3 rounded bg-paper-50 border border-paper-200">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-mono uppercase tracking-wide text-ink-600">Google Discover / News Score</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono font-bold" style={{ color }}>{score}/{checks.length} — {pct}%</span>
+          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded border" style={{ color, borderColor: color, background: color + '15' }}>{badge}</span>
+        </div>
+      </div>
+      <div className="w-full h-1.5 bg-paper-200 rounded-full overflow-hidden mb-3">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <ul className="space-y-1.5">
+        {checks.map(c => (
+          <li key={c.label} className="flex items-start gap-2 text-xs">
+            <span className="mt-0.5 shrink-0" style={{ color: c.pass ? '#2e6f6b' : '#b23a2e' }}>{c.pass ? '✓' : '✗'}</span>
+            <div>
+              <span className={c.pass ? 'text-ink-500' : 'text-ink-700 font-medium'}>{c.label}</span>
+              {!c.pass && c.hint && <span className="text-ink-400 ml-1">— {c.hint}</span>}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 pt-2 border-t border-paper-200 flex gap-3 text-[11px] text-ink-400 font-mono">
+        <span>Words: <strong className="text-ink-600">{wordCount}</strong></span>
+        <span>Title: <strong className={title.length > 70 ? 'text-press-red' : 'text-ink-600'}>{title.length} chars</strong></span>
+      </div>
+    </div>
+  );
+}
+
 function SeoMeter({ title, description, focusKeyword }) {
   const checks = [
     { label: 'SEO title set', pass: title.trim().length > 0 },
@@ -440,6 +523,7 @@ export default function ArticleEditor() {
                 </div>
               </label>
               <SeoMeter title={form.seoTitle || form.title} description={form.seoDescription} focusKeyword={form.focusKeyword} />
+              <DiscoverMeter form={form} wordCount={Math.round(form.content.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length)} />
               {(form.seoTitle || form.title) && (
                 <div className="mt-3">
                   <p className={`${labelCls} mb-2`}>Search result preview</p>
