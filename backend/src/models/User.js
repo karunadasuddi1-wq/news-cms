@@ -10,8 +10,8 @@ class User extends Model {
   }
 
   toSafeJSON() {
-    const { id, name, email, role, createdAt, updatedAt } = this;
-    return { id, name, email, role, createdAt, updatedAt };
+    const { id, name, email, role, bio, avatar, socialLinks, createdAt, updatedAt } = this;
+    return { id, name, email, role, bio, avatar, socialLinks, createdAt, updatedAt };
   }
 }
 
@@ -48,6 +48,20 @@ User.init(
       allowNull: false,
       defaultValue: true,
       field: 'is_active',
+    },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    avatar: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    socialLinks: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
+      field: 'social_links',
     },
   },
   {

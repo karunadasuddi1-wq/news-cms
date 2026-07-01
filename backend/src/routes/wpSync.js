@@ -37,4 +37,19 @@ router.post('/:id', requireRole('admin', 'editor'), asyncHandler(async (req, res
   }
 }));
 
+
+// POST /api/wp-sync/author/:id — sync author bio to WordPress
+router.post('/author/:id', requireRole('admin'), asyncHandler(async (req, res) => {
+  const { User } = require('../models');
+  const author = await User.findByPk(req.params.id);
+  if (!author) return res.status(404).json({ error: 'Author not found.' });
+  const { syncAuthorToWordPress } = require('../controllers/wpSyncController');
+  try {
+    await syncAuthorToWordPress(author);
+    res.json({ ok: true, message: 'Author bio synced to WordPress.' });
+  } catch (err) {
+    res.status(502).json({ ok: false, error: err.message });
+  }
+}));
+
 module.exports = router;

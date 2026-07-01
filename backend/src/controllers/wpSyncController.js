@@ -152,4 +152,33 @@ async function testWpConnection() {
   }
 }
 
-module.exports = { syncToWordPress, testWpConnection };
+
+/**
+ * Push author bio/avatar to WordPress user profile
+ */
+async function syncAuthorToWordPress(author) {
+  if (!author) return;
+  try {
+    // Find WP user by slug/login
+    const searchRes = await wpRequest(`/users?search=${encodeURIComponent(author.email)}&_fields=id,name,slug`);
+    if (searchRes.status !== 200 || !Array.isArray(searchRes.data) || !searchRes.data.length) {
+      console.warn('[wp-sync] Author not found in WordPress:', author.email);
+      return;
+    }
+    const wpUserId = searchRes.data[0].id;
+    const payload = {};
+    if (author.bio) payload.description = author.bio;
+    if (author.name) payload.name = author.name;
+    if (Object.keys(payload).length === 0) return;
+    const res = await wpRequest(`/users/${wpUserId}`, { method: 'POST', body: payload });
+    if (res.status === 200) {
+      console.log('[wp-sync] Author bio synced to WordPress user ID:', wpUserId);
+    } else {
+      console.warn('[wp-sync] Author bio sync failed:', res.status);
+    }
+  } catch (err) {
+    console.warn('[wp-sync] Author bio sync error:', err.message);
+  }
+}
+
+module.exports = { syncToWordPress, testWpConnection, syncAuthorToWordPress };

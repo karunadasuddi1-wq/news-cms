@@ -7,7 +7,7 @@ const list = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, bio, avatar, socialLinks } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email and password are required.' });
@@ -28,6 +28,9 @@ const create = asyncHandler(async (req, res) => {
     name: name.trim(),
     email: email.toLowerCase().trim(),
     role,
+    bio: bio || null,
+    avatar: avatar || null,
+    socialLinks: socialLinks || {},
   });
   user.password = password; // virtual setter, hashed in beforeCreate hook
   await user.save();
@@ -39,7 +42,7 @@ const update = asyncHandler(async (req, res) => {
   const user = await User.findByPk(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found.' });
 
-  const { name, role, isActive, password } = req.body;
+  const { name, role, isActive, password, bio, avatar, socialLinks } = req.body;
 
   if (name) user.name = name.trim();
   if (role) {
@@ -51,6 +54,9 @@ const update = asyncHandler(async (req, res) => {
     }
     user.role = role;
   }
+  if (bio !== undefined) user.bio = bio;
+  if (avatar !== undefined) user.avatar = avatar;
+  if (socialLinks !== undefined) user.socialLinks = socialLinks;
   if (typeof isActive === 'boolean') {
     if (user.id === req.user.id && !isActive) {
       return res.status(400).json({ error: "You can't deactivate your own account." });
