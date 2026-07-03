@@ -3,6 +3,7 @@ const User = require('./User');
 const Category = require('./Category');
 const Article = require('./Article');
 const Page = require('./Page');
+const Setting = require('./Setting');
 
 // Article associations
 Article.belongsTo(User, { as: 'author', foreignKey: { name: 'authorId', field: 'author_id', allowNull: false } });
@@ -12,6 +13,7 @@ Article.belongsTo(Category, { as: 'category', foreignKey: { name: 'categoryId', 
 Category.hasMany(Article, { as: 'articles', foreignKey: { name: 'categoryId', field: 'category_id' } });
 
 module.exports = {
+  Setting,
   sequelize,
   User,
   Category,

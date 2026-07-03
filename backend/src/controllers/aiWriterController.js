@@ -1,4 +1,5 @@
 const https = require('https');
+const { callAI } = require('../utils/aiProvider');
 const asyncHandler = require('../utils/asyncHandler');
 const { Article, Category } = require('../models');
 const { generateUniqueSlug } = require('../utils/slug');
@@ -39,35 +40,7 @@ function httpsRequest(url, options = {}, redirectCount = 0) {
   });
 }
 
-async function callClaude(systemPrompt, userPrompt, maxTokens = 4000) {
-  console.log('callClaude: API key present?', !!ANTHROPIC_API_KEY, 'length:', ANTHROPIC_API_KEY ? ANTHROPIC_API_KEY.length : 0);
-  console.log('callClaude: calling Anthropic API...');
-  const res = await httpsRequest('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-    timeoutMs: 90000,
-  });
-  console.log('callClaude: response status:', res.status, 'body preview:', res.body.slice(0, 300));
-
-  let parsed;
-  try { parsed = JSON.parse(res.body); } catch { throw new Error('Claude API returned invalid JSON'); }
-  if (res.status !== 200) {
-    throw new Error(parsed.error?.message || `Claude API error (${res.status})`);
-  }
-  const textBlock = parsed.content?.find(b => b.type === 'text');
-  if (!textBlock) throw new Error('No text in Claude response');
-  return textBlock.text;
-}
+// callAI is now imported from aiProvider.js — supports Anthropic, OpenAI, Gemini, Groq, Mistral
 
 function stripHtml(html) {
   return html
@@ -204,9 +177,7 @@ const TONE_LABELS = {
 };
 
 const rewrite = asyncHandler(async (req, res) => {
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'AI Writer is not configured. Missing ANTHROPIC_API_KEY.' });
-  }
+  // AI provider is configured via Settings — callAI handles provider selection
 
   const { sourceText, tone = 'neutral', categoryId, sourceUrl } = req.body;
 
@@ -247,7 +218,7 @@ Tags should be short lowercase English slugs (e.g. "karnataka-politics", "siddar
 
   let aiText;
   try {
-    aiText = await callClaude(systemPrompt, userPrompt, 4000);
+    aiText = await callAI(systemPrompt, userPrompt, 4000);
   } catch (err) {
     return res.status(502).json({ error: `AI generation failed: ${err.message}` });
   }
