@@ -7,6 +7,7 @@
 
 const https = require('https');
 const { getSetting } = require('../controllers/settingController');
+const { logUsage } = require('./usageTracker');
 
 function httpsPost(hostname, path, headers, body) {
   return new Promise((resolve, reject) => {
@@ -82,40 +83,68 @@ async function callMistral(apiKey, systemPrompt, userPrompt, maxTokens, model = 
  * Main function — call this from any controller
  * Automatically picks the active provider and API key
  */
-async function callAI(systemPrompt, userPrompt, maxTokens = 4000) {
+async function callAI(systemPrompt, userPrompt, maxTokens = 4000, options = {}) {
   const provider = await getSetting('ai_provider', null) || 'anthropic';
   console.log(`[ai-provider] Using provider: ${provider}`);
+
+  // Estimate input tokens (~4 chars per token)
+  const inputTokenEstimate = Math.round((systemPrompt.length + userPrompt.length) / 4);
+
+  let result = '';
+  let modelUsed = 'unknown';
 
   switch (provider) {
     case 'openai': {
       const key = await getSetting('openai_api_key', 'OPENAI_API_KEY');
       if (!key) throw new Error('OpenAI API key not configured.');
-      const model = await getSetting('openai_model', null) || 'gpt-4o';
-      return callOpenAI(key, systemPrompt, userPrompt, maxTokens, model);
+      modelUsed = await getSetting('openai_model', null) || 'gpt-4o';
+      result = await callOpenAI(key, systemPrompt, userPrompt, maxTokens, modelUsed);
+      break;
     }
     case 'gemini': {
       const key = await getSetting('gemini_api_key', 'GEMINI_API_KEY');
       if (!key) throw new Error('Google Gemini API key not configured.');
-      const model = await getSetting('gemini_model', null) || 'gemini-1.5-flash';
-      return callGemini(key, systemPrompt, userPrompt, maxTokens, model);
+      modelUsed = await getSetting('gemini_model', null) || 'gemini-1.5-flash';
+      result = await callGemini(key, systemPrompt, userPrompt, maxTokens, modelUsed);
+      break;
     }
     case 'groq': {
       const key = await getSetting('groq_api_key', 'GROQ_API_KEY');
       if (!key) throw new Error('Groq API key not configured.');
-      return callGroq(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = 'llama-3.1-70b-versatile';
+      result = await callGroq(key, systemPrompt, userPrompt, maxTokens);
+      break;
     }
     case 'mistral': {
       const key = await getSetting('mistral_api_key', 'MISTRAL_API_KEY');
       if (!key) throw new Error('Mistral API key not configured.');
-      return callMistral(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = 'mistral-large-latest';
+      result = await callMistral(key, systemPrompt, userPrompt, maxTokens);
+      break;
     }
     case 'anthropic':
     default: {
       const key = await getSetting('anthropic_api_key', 'ANTHROPIC_API_KEY');
       if (!key) throw new Error('Anthropic API key not configured.');
-      return callAnthropic(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = 'claude-sonnet-4-6';
+      result = await callAnthropic(key, systemPrompt, userPrompt, maxTokens);
+      break;
     }
   }
+
+  // Log usage (non-fatal)
+  const outputTokenEstimate = Math.round(result.length / 4);
+  await logUsage({
+    userId: options.userId || null,
+    action: options.action || 'ai_call',
+    provider,
+    model: modelUsed,
+    inputTokens: inputTokenEstimate,
+    outputTokens: outputTokenEstimate,
+    metadata: options.metadata || {},
+  }).catch(err => console.error('[usage-tracker] Log failed:', err.message));
+
+  return result;
 }
 
 module.exports = { callAI };

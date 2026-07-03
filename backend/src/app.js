@@ -16,6 +16,7 @@ const analyticsRoutes = require('./routes/analytics');
 const aiWriterRoutes = require('./routes/aiWriter');
 const wpSyncRoutes = require('./routes/wpSync');
 const settingsRoutes = require('./routes/settings');
+const usageRoutes = require('./routes/usage');
 const pageRoutes = require('./routes/pages');
 const { listPublic: listPublicPages, getPublic: getPublicPage } = require('./controllers/pageController');
 const publicRoutes = require('./routes/public');
@@ -87,6 +88,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai-writer', aiWriterRoutes);
 app.use('/api/wp-sync', wpSyncRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/usage', usageRoutes);
 app.use('/api/pages', pageRoutes);
 
 // Public pages (no auth)

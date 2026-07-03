@@ -1,9 +1,7 @@
-const Anthropic = require('@anthropic-ai/sdk');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateUniqueSlug } = require('../utils/slug');
 const { Article } = require('../models');
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const { callAI } = require('../utils/aiProvider');
 
 function extractJson(text) {
   try { return JSON.parse(text.trim()); } catch {}
@@ -48,11 +46,7 @@ const generateSeo = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(503).json({
-      error: 'AI generation is not configured. Ask your admin to add ANTHROPIC_API_KEY to the server environment.',
-    });
-  }
+  // AI provider configured via Settings
 
   const contentPreview = content.trim().slice(0, 4000);
   const currentTitle = title.trim();
@@ -74,13 +68,11 @@ Rules for tags:
 - Examples: "ksrtc", "bus-fare", "karnataka-transport", "siddaramaiah", "bengaluru"
 - Mix specific (person/org names) and broad (topic) tags`;
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 900,
-    messages: [{ role: 'user', content: prompt }],
+  const raw = await callAI('You are a Kannada news SEO editor.', prompt, 900, {
+    userId: req.user?.id,
+    action: 'ai_seo_generate',
+    metadata: { articleId: existingArticleId },
   });
-
-  const raw = message.content.find((b) => b.type === 'text')?.text || '';
   console.log('[seo-generate] raw response:', raw.slice(0, 400));
 
   const parsed = extractJson(raw);

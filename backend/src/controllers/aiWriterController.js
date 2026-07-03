@@ -218,7 +218,11 @@ Tags should be short lowercase English slugs (e.g. "karnataka-politics", "siddar
 
   let aiText;
   try {
-    aiText = await callAI(systemPrompt, userPrompt, 4000);
+    aiText = await callAI(systemPrompt, userPrompt, 4000, {
+      userId: req.user?.id,
+      action: 'ai_writer_rewrite',
+      metadata: { tone, categoryId, hasSourceUrl: !!sourceUrl },
+    });
   } catch (err) {
     return res.status(502).json({ error: `AI generation failed: ${err.message}` });
   }
