@@ -11,6 +11,8 @@ import Analytics from './pages/Analytics';
 import Pages from './pages/Pages';
 import AiWriter from './pages/AiWriter';
 import Newsroom from './pages/Newsroom';
+import Settings from './pages/Settings';
+import UsageDashboard from './pages/UsageDashboard';
 import Layout from './components/Layout';
 
 export default function App() {
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/pages" element={<ProtectedRoute><Layout><Pages /></Layout></ProtectedRoute>} />
           <Route path="/ai-writer" element={<ProtectedRoute><Layout><AiWriter /></Layout></ProtectedRoute>} />
           <Route path="/newsroom" element={<ProtectedRoute><Layout><Newsroom /></Layout></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+          <Route path="/usage" element={<ProtectedRoute><Layout><UsageDashboard /></Layout></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute adminOnly><Layout><Users /></Layout></ProtectedRoute>} />
         </Routes>
       </AuthProvider>

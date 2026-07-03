@@ -6,6 +6,8 @@ const NAV_ITEMS = [
   { to: '/articles', label: 'Articles', icon: '▤' },
   { to: '/ai-writer', label: 'AI Writer', icon: '✦' },
   { to: '/newsroom', label: 'Newsroom', icon: '◈' },
+  { to: '/usage', label: 'AI Costs', icon: '💰', requiresAdmin: true },
+  { to: '/settings', label: 'Settings', icon: '⚙', requiresAdmin: true },
   { to: '/categories', label: 'Categories', icon: '▥' },
   { to: '/analytics', label: 'Analytics', icon: '▲' },
   { to: '/pages', label: 'Pages', icon: '◧' },

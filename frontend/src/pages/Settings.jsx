@@ -1,0 +1,233 @@
+import { useEffect, useState } from 'react';
+import client, { apiErrorMessage } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import ErrorBanner from '../components/ErrorBanner';
+
+const labelCls = 'block text-xs font-mono uppercase tracking-wide text-ink-600 mb-1.5';
+const inputCls = 'w-full border border-paper-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-press-red/20 focus:border-press-red/40 bg-white';
+const selectCls = `${inputCls} cursor-pointer`;
+
+const PROVIDERS = [
+  { value: 'anthropic', label: 'Anthropic (Claude)', models: ['claude-sonnet-4-6', 'claude-haiku-4-5'] },
+  { value: 'openai', label: 'OpenAI (ChatGPT)', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] },
+  { value: 'gemini', label: 'Google Gemini', models: ['gemini-1.5-flash', 'gemini-1.5-pro'] },
+  { value: 'groq', label: 'Groq (Llama)', models: ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'] },
+  { value: 'mistral', label: 'Mistral AI', models: ['mistral-large-latest', 'mistral-medium'] },
+];
+
+function StatusBadge({ configured }) {
+  return configured
+    ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-wire-teal/10 text-wire-teal-dark border border-wire-teal/20">✓ Configured</span>
+    : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-press-red/10 text-press-red border border-press-red/20">✗ Not set</span>;
+}
+
+export default function Settings() {
+  const { can } = useAuth();
+  const [settings, setSettings] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [wpTesting, setWpTesting] = useState(false);
+  const [wpStatus, setWpStatus] = useState(null);
+
+  const [form, setForm] = useState({
+    site_name: '',
+    site_url: '',
+    ai_provider: 'anthropic',
+    wp_sync_enabled: 'true',
+    anthropic_api_key: '',
+    openai_api_key: '',
+    openai_model: 'gpt-4o',
+    gemini_api_key: '',
+    gemini_model: 'gemini-1.5-flash',
+    groq_api_key: '',
+    mistral_api_key: '',
+  });
+
+  useEffect(() => {
+    client.get('/settings')
+      .then(r => {
+        const s = r.data.settings;
+        setSettings(s);
+        setForm(f => ({
+          ...f,
+          site_name: s.site_name || '',
+          site_url: s.site_url || '',
+          ai_provider: s.ai_provider || 'anthropic',
+          wp_sync_enabled: s.wp_sync_enabled || 'true',
+        }));
+      })
+      .catch(err => setError(apiErrorMessage(err)));
+  }, []);
+
+  function setField(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const payload = {
+        site_name: form.site_name,
+        site_url: form.site_url,
+        ai_provider: form.ai_provider,
+        wp_sync_enabled: form.wp_sync_enabled,
+        openai_model: form.openai_model,
+        gemini_model: form.gemini_model,
+      };
+      // Only send API keys if they were filled in
+      if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
+      if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
+      if (form.gemini_api_key) payload.gemini_api_key = form.gemini_api_key;
+      if (form.groq_api_key) payload.groq_api_key = form.groq_api_key;
+      if (form.mistral_api_key) payload.mistral_api_key = form.mistral_api_key;
+
+      await client.put('/settings', payload);
+      setSuccess('Settings saved successfully.');
+      // Refresh settings
+      const r = await client.get('/settings');
+      setSettings(r.data.settings);
+      // Clear key fields
+      setForm(f => ({ ...f, anthropic_api_key: '', openai_api_key: '', gemini_api_key: '', groq_api_key: '', mistral_api_key: '' }));
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function testWp() {
+    setWpTesting(true); setWpStatus(null);
+    try {
+      const r = await client.get('/wp-sync/test');
+      setWpStatus({ ok: true, message: r.data.message });
+    } catch (err) {
+      setWpStatus({ ok: false, message: apiErrorMessage(err) });
+    } finally {
+      setWpTesting(false);
+    }
+  }
+
+  if (!can.manageUsers) {
+    return <div className="px-8 py-16 text-center text-ink-400 text-sm">Admin access required.</div>;
+  }
+
+  const activeProvider = PROVIDERS.find(p => p.value === form.ai_provider);
+
+  return (
+    <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-3xl mx-auto">
+      <h1 className="font-display font-bold text-2xl text-ink-900 mb-1">Settings</h1>
+      <p className="text-sm text-ink-500 mb-6">Manage site configuration, AI providers, and integrations.</p>
+
+      <ErrorBanner message={error} />
+      {success && <div className="bg-wire-teal/10 border border-wire-teal/20 text-wire-teal-dark text-sm rounded px-4 py-2.5 mb-4">{success}</div>}
+
+      <form onSubmit={handleSave} className="space-y-6">
+
+        {/* Site Identity */}
+        <div className="border border-paper-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-paper-50 border-b border-paper-200">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">🏢 Site Identity</h2>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className={labelCls}>Site Name</label>
+              <input className={inputCls} value={form.site_name} onChange={e => setField('site_name', e.target.value)} placeholder="Karunada Suddi" />
+            </div>
+            <div>
+              <label className={labelCls}>Site URL</label>
+              <input className={inputCls} type="url" value={form.site_url} onChange={e => setField('site_url', e.target.value)} placeholder="https://karunadasuddi.in" />
+            </div>
+          </div>
+        </div>
+
+        {/* AI Provider */}
+        <div className="border border-paper-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-paper-50 border-b border-paper-200 flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">✦ AI Provider</h2>
+            <span className="text-xs text-ink-400">Active: <strong className="text-ink-700">{activeProvider?.label}</strong></span>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className={labelCls}>Active Provider</label>
+              <select className={selectCls} value={form.ai_provider} onChange={e => setField('ai_provider', e.target.value)}>
+                {PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+
+            {/* Provider status cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {PROVIDERS.map(p => {
+                const keyField = `${p.value}_api_key`;
+                const isSet = settings?.[`${p.value}_key_set`];
+                const isActive = form.ai_provider === p.value;
+                return (
+                  <div key={p.value} className={`border rounded-lg p-3 ${isActive ? 'border-press-red/30 bg-press-red/5' : 'border-paper-200'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-ink-700">{p.label}</span>
+                      <StatusBadge configured={isSet} />
+                    </div>
+                    <input
+                      className="w-full border border-paper-200 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-press-red/30 bg-white font-mono"
+                      type="password"
+                      placeholder={isSet ? '••••••••••••••• (leave blank to keep)' : 'Enter API key...'}
+                      value={form[keyField] || ''}
+                      onChange={e => setField(keyField, e.target.value)}
+                      autoComplete="off"
+                    />
+                    {(p.value === 'openai' || p.value === 'gemini') && (
+                      <select
+                        className="w-full mt-1.5 border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
+                        value={form[`${p.value}_model`]}
+                        onChange={e => setField(`${p.value}_model`, e.target.value)}
+                      >
+                        {p.models.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-ink-400">API keys are stored securely and never shown after saving. Leave blank to keep existing key.</p>
+          </div>
+        </div>
+
+        {/* WordPress Integration */}
+        <div className="border border-paper-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-paper-50 border-b border-paper-200 flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">🔄 WordPress Integration</h2>
+            <StatusBadge configured={settings?.wp_configured} />
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.wp_sync_enabled === 'true'}
+                  onChange={e => setField('wp_sync_enabled', e.target.checked ? 'true' : 'false')}
+                  className="w-4 h-4 accent-press-red"
+                />
+                <span className="text-sm text-ink-700">Auto-sync articles to WordPress on publish</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={testWp} disabled={wpTesting}
+                className="px-4 py-2 text-xs font-mono uppercase tracking-wide border border-paper-200 rounded hover:bg-paper-50 transition-colors disabled:opacity-60">
+                {wpTesting ? 'Testing…' : 'Test Connection'}
+              </button>
+              {wpStatus && (
+                <span className={`text-xs font-mono ${wpStatus.ok ? 'text-wire-teal-dark' : 'text-press-red'}`}>
+                  {wpStatus.ok ? '✓' : '✗'} {wpStatus.message}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" disabled={saving}
+          className="w-full bg-ink-900 hover:bg-ink-800 text-white text-sm font-semibold py-3 rounded transition-colors disabled:opacity-60">
+          {saving ? 'Saving…' : 'Save Settings'}
+        </button>
+      </form>
+    </div>
+  );
+}
