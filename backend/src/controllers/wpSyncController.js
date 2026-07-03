@@ -55,7 +55,7 @@ function wpRequest(path, options = {}) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': wpAuthHeader(),
-        'User-Agent': 'KarunadaSuddi-CMS/1.0',
+        'User-Agent': 'PublisherOS-CMS/1.0 (WordPress-Sync; +https://publisheros.in)',
         ...options.headers,
       },
       timeout: 30000,
