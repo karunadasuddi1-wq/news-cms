@@ -10,6 +10,8 @@ const NAV_ITEMS = [
   { to: '/categories', label: 'Categories', icon: '▥' },
   { to: '/analytics', label: 'Analytics', icon: '▲' },
   { to: '/pages', label: 'Pages', icon: '◧' },
+  { to: '/usage', label: 'AI Costs', icon: '💰', requiresAdmin: true },
+  { to: '/settings', label: 'Settings', icon: '⚙', requiresAdmin: true },
   { to: '/users', label: 'Staff', icon: '☷', requiresAdmin: true },
 ];
 
