@@ -36,6 +36,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'anthropic_api_key', 'openai_api_key', 'gemini_api_key',
     'groq_api_key', 'mistral_api_key', 'openai_model', 'gemini_model',
     'wp_site_url', 'wp_username', 'wp_app_password',
+    'wp_category_map', 'wp_default_category_id',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {

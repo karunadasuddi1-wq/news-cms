@@ -83,6 +83,7 @@ async function wpRequest(path, options = {}) {
 
 async function sideloadImage(imageUrl, title) {
   if (!imageUrl) return null;
+  const { site_url, username, password } = await getWpConfig();
   try {
     // Download image as binary
     const imageRes = await new Promise((resolve, reject) => {
@@ -105,7 +106,7 @@ async function sideloadImage(imageUrl, title) {
     const filename = `${(title || 'image').toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 50)}.${ext}`;
 
     // Upload binary to WordPress media library
-    const wpUrl = new URL(`${WP_SITE_URL}/wp-json/wp/v2/media`);
+    const wpUrl = new URL(`${site_url}/wp-json/wp/v2/media`);
     const uploadRes = await new Promise((resolve, reject) => {
       const opts = {
         hostname: wpUrl.hostname,
@@ -113,7 +114,7 @@ async function sideloadImage(imageUrl, title) {
         path: wpUrl.pathname,
         method: 'POST',
         headers: {
-          'Authorization': wpAuthHeader(),
+          'Authorization': wpAuthHeader(username, password),
           'Content-Disposition': `attachment; filename="${filename}"`,
           'Content-Type': contentType,
           'Content-Length': imageRes.buffer.length,
@@ -146,21 +147,32 @@ async function sideloadImage(imageUrl, title) {
   }
 }
 
-function mapCategory(categorySlug) {
-  if (!categorySlug) return [772218483];
-  const wpId = CATEGORY_MAP[categorySlug];
-  return wpId ? [wpId] : [772218483];
+async function mapCategory(categorySlug) {
+  const defaultId = parseInt((await getSetting('wp_default_category_id', null)) || '772218483', 10);
+  if (!categorySlug) return [defaultId];
+
+  let siteMap = {};
+  try {
+    const raw = await getSetting('wp_category_map', null);
+    if (raw) siteMap = JSON.parse(raw);
+  } catch (err) {
+    console.warn('[wp-sync] Could not parse wp_category_map setting:', err.message);
+  }
+
+  const wpId = siteMap[categorySlug] || CATEGORY_MAP[categorySlug];
+  return wpId ? [wpId] : [defaultId];
 }
 
 async function syncToWordPress(article, categorySlug) {
-  if (!WP_APP_USER || !WP_APP_PASSWORD) {
-    throw new Error('WordPress credentials not configured. Set WP_APP_USER and WP_APP_PASSWORD env vars.');
+  const { username, password } = await getWpConfig();
+  if (!username || !password) {
+    throw new Error('WordPress credentials not configured. Set them in Settings.');
   }
 
   console.log(`[wp-sync] Syncing "${article.title}" (CMS ID: ${article.id})...`);
 
   const featuredMediaId = await sideloadImage(article.featuredImage, article.title);
-  const wpCategories = mapCategory(categorySlug);
+  const wpCategories = await mapCategory(categorySlug);
 
   const payload = {
     title: article.title,
