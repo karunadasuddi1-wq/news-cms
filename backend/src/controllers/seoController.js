@@ -58,12 +58,17 @@ ARTICLE TITLE: ${currentTitle || '(not yet set)'}
 ARTICLE CONTENT:
 ${contentPreview}
 
+STEP 1: Identify ONE single English word — the single term real people are most likely to type into Google when searching for this story. It must be exactly one word (a proper noun, organization, place, or key entity name — e.g. "KSRTC", "Budget", "Siddaramaiah", "Cyclone"). Not a phrase, not multiple words.
+
+STEP 2: Use that EXACT same English word, unchanged, inline in the Kannada headline, the Kannada excerpt, the English SEO title, and the English SEO description. Every one of these four fields MUST contain that exact word — this is the most important rule.
+
 Respond with ONLY this JSON object, nothing else before or after it:
 
-{"headline":"compelling headline under 70 chars for Google Discover","slug":"url-slug-lowercase-hyphenated-max-60-chars","excerpt":"2-3 sentence summary 150-200 chars","seoTitle":"SEO title 30-60 chars with keyword","seoDescription":"meta description 120-155 chars with keyword and call to action","focusKeyword":"primary keyword 2-4 words","tags":["tag1","tag2","tag3","tag4","tag5"]}
+{"headline":"compelling Kannada headline under 70 chars for Google Discover, with the English keyword embedded inline","slug":"url-slug-lowercase-hyphenated-max-60-chars, must include the English keyword","excerpt":"2-3 sentence Kannada summary 150-200 chars, with the English keyword embedded inline","seoTitle":"SEO title 30-60 chars in English, must include the keyword","seoDescription":"meta description 120-155 chars in English, must include the keyword and a call to action","focusKeyword":"the single English word from Step 1","tags":["tag1","tag2","tag3","tag4","tag5"]}
 
 Rules for tags:
 - Generate 4-6 relevant tags in English (lowercase, no spaces, use hyphens for multi-word)
+- The focus keyword itself should be the first tag
 - Tags should be searchable topic keywords — people, places, organizations, topics mentioned in the article
 - Examples: "ksrtc", "bus-fare", "karnataka-transport", "siddaramaiah", "bengaluru"
 - Mix specific (person/org names) and broad (topic) tags`;
@@ -84,12 +89,21 @@ Rules for tags:
     });
   }
 
-  const baseSlug = (parsed.slug || '')
+  const focusKeyword = (parsed.focusKeyword || '').trim().split(/\s+/)[0] || '';
+  const keywordSlugPart = focusKeyword
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  let baseSlug = (parsed.slug || '')
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 60);
+
+  if (keywordSlugPart && !baseSlug.includes(keywordSlugPart)) {
+    baseSlug = `${keywordSlugPart}-${baseSlug}`.replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+  }
 
   const uniqueSlug = await generateUniqueSlug(
     Article,
@@ -97,11 +111,25 @@ Rules for tags:
     existingArticleId ? parseInt(existingArticleId, 10) : null
   );
 
-  // Clean and validate tags
-  const tags = (Array.isArray(parsed.tags) ? parsed.tags : [])
+  const altText = uniqueSlug;
+
+  let tags = (Array.isArray(parsed.tags) ? parsed.tags : [])
     .map(t => String(t).toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))
-    .filter(t => t.length >= 2 && t.length <= 50)
-    .slice(0, 6);
+    .filter(t => t.length >= 2 && t.length <= 50);
+  if (keywordSlugPart && !tags.includes(keywordSlugPart)) {
+    tags = [keywordSlugPart, ...tags];
+  }
+  tags = tags.slice(0, 6);
+
+  if (focusKeyword) {
+    const kw = focusKeyword.toLowerCase();
+    const checks = { headline: parsed.headline, excerpt: parsed.excerpt, seoTitle: parsed.seoTitle, seoDescription: parsed.seoDescription };
+    for (const [field, value] of Object.entries(checks)) {
+      if (!String(value || '').toLowerCase().includes(kw)) {
+        console.warn(`[seo-generate] Focus keyword "${focusKeyword}" missing from ${field}`);
+      }
+    }
+  }
 
   res.json({
     headline: parsed.headline || '',
@@ -109,7 +137,8 @@ Rules for tags:
     excerpt: parsed.excerpt || '',
     seoTitle: parsed.seoTitle || '',
     seoDescription: parsed.seoDescription || '',
-    focusKeyword: parsed.focusKeyword || '',
+    focusKeyword,
+    altText,
     tags,
   });
 });
