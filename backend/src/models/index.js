@@ -13,6 +13,9 @@ User.hasMany(Article, { as: 'articles', foreignKey: { name: 'authorId', field: '
 Article.belongsTo(Category, { as: 'category', foreignKey: { name: 'categoryId', field: 'category_id', allowNull: false } });
 Category.hasMany(Article, { as: 'articles', foreignKey: { name: 'categoryId', field: 'category_id' } });
 
+// AI usage log associations (needed for the AI Costs dashboard's include: [{ model: User, as: 'user' }])
+AiUsageLog.belongsTo(User, { as: 'user', foreignKey: { name: 'userId', field: 'user_id' } });
+
 module.exports = {
   Setting,
   AiUsageLog,
