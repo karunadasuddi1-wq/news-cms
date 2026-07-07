@@ -60,7 +60,9 @@ ${contentPreview}
 
 STEP 1: Identify ONE single English word — the single term real people are most likely to type into Google when searching for this story. It must be exactly one word (a proper noun, organization, place, or key entity name — e.g. "KSRTC", "Budget", "Siddaramaiah", "Cyclone"). Not a phrase, not multiple words.
 
-STEP 2: Use that EXACT same English word, unchanged, inline in ALL FOUR of: the Kannada headline, the Kannada excerpt, the Kannada SEO title, and the Kannada SEO description. All four fields are written primarily in Kannada — only that one English word is mixed in, exactly as Kannada news sites naturally do. Every one of these four fields MUST contain that exact word — this is the most important rule.
+STEP 2: Use that EXACT same English word, unchanged, inline in ALL FOUR of: the Kannada headline, the Kannada excerpt, the Kannada SEO title, and the Kannada SEO description. Every one of these four fields MUST contain that exact word — this is the most important rule.
+
+STRICT RULE — NO OTHER ENGLISH WORDS ALLOWED: The ONLY English word permitted anywhere in the headline, excerpt, SEO title, and SEO description is that one single keyword. Every other proper noun, place name, organization name, or number-word must be written in Kannada script instead — e.g. write ಅಹಮದಾಬಾದ್ instead of "Ahmedabad" (unless Ahmedabad happens to be your chosen keyword), ಗುಜರಾತ್ ಹೈಕೋರ್ಟ್ instead of "Gujarat High Court", ೨೦೦೮ or 2008 written naturally in the Kannada sentence instead of an extra English phrase. Do not mix in any other English names or phrases beyond the one designated keyword — if you catch yourself writing a second English word or phrase, replace it with its Kannada equivalent before responding.
 
 Respond with ONLY this JSON object, nothing else before or after it:
 
