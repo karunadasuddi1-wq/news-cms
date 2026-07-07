@@ -81,7 +81,7 @@ async function wpRequest(path, options = {}) {
   });
 }
 
-async function sideloadImage(imageUrl, title) {
+async function sideloadImage(imageUrl, title, altText) {
   if (!imageUrl) return null;
   const { site_url, username, password } = await getWpConfig();
   try {
@@ -137,6 +137,16 @@ async function sideloadImage(imageUrl, title) {
 
     if (uploadRes.status === 201 && uploadRes.data.id) {
       console.log('[wp-sync] Image uploaded to WP, ID:', uploadRes.data.id);
+      if (altText) {
+        try {
+          await wpRequest(`/media/${uploadRes.data.id}`, {
+            method: 'POST',
+            body: { alt_text: altText },
+          });
+        } catch (err) {
+          console.warn('[wp-sync] Failed to set image alt text (non-fatal):', err.message);
+        }
+      }
       return uploadRes.data.id;
     }
     console.warn('[wp-sync] Image upload failed:', uploadRes.status, JSON.stringify(uploadRes.data).slice(0, 200));
@@ -171,7 +181,7 @@ async function syncToWordPress(article, categorySlug) {
 
   console.log(`[wp-sync] Syncing "${article.title}" (CMS ID: ${article.id})...`);
 
-  const featuredMediaId = await sideloadImage(article.featuredImage, article.title);
+  const featuredMediaId = await sideloadImage(article.featuredImage, article.title, article.imageAlt);
   const wpCategories = await mapCategory(categorySlug);
 
   const payload = {

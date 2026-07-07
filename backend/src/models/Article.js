@@ -35,6 +35,11 @@ Article.init(
       allowNull: true,
       field: 'featured_image',
     },
+    imageAlt: {
+      type: DataTypes.STRING(180),
+      allowNull: true,
+      field: 'image_alt',
+    },
     status: {
       type: DataTypes.ENUM(...STATUSES),
       allowNull: false,
