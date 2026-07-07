@@ -278,6 +278,20 @@ const remove = asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'Ask an editor to delete a published article.' });
   }
 
+  if (article.wpPostId) {
+    try {
+      const { deleteFromWordPress } = require('./wpSyncController');
+      const wpResult = await deleteFromWordPress(article.wpPostId);
+      if (!wpResult.ok) {
+        console.warn(`[article-delete] Failed to remove WP post ${article.wpPostId}:`, wpResult.error);
+      } else {
+        console.log(`[article-delete] WP post ${article.wpPostId} moved to trash.`);
+      }
+    } catch (err) {
+      console.warn('[article-delete] WP delete sync error (non-fatal):', err.message);
+    }
+  }
+
   await article.destroy();
   res.status(204).send();
 });

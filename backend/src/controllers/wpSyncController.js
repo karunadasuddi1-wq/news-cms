@@ -209,6 +209,19 @@ async function syncToWordPress(article, categorySlug) {
   return { wpPostId: wpPost.id, wpUrl: wpPost.link };
 }
 
+async function deleteFromWordPress(wpPostId) {
+  if (!wpPostId) return { ok: true, skipped: true };
+  try {
+    // By default WP REST moves the post to Trash rather than permanently deleting it —
+    // safer, and recoverable from wp-admin if this was triggered by mistake.
+    const res = await wpRequest(`/posts/${wpPostId}`, { method: 'DELETE' });
+    if (res.status === 200 || res.status === 410) return { ok: true };
+    return { ok: false, error: `Status ${res.status}: ${JSON.stringify(res.data).slice(0, 200)}` };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function testWpConnection() {
   try {
     const res = await wpRequest('/users/me?_fields=id,name,slug');
@@ -248,4 +261,4 @@ async function syncAuthorToWordPress(author) {
   }
 }
 
-module.exports = { syncToWordPress, testWpConnection, syncAuthorToWordPress };
+module.exports = { syncToWordPress, testWpConnection, syncAuthorToWordPress, deleteFromWordPress };
