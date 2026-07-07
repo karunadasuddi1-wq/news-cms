@@ -36,7 +36,7 @@ function applySchedule(article, body) {
 }
 
 function applySeoFields(article, body) {
-  const { seoTitle, seoDescription, focusKeyword, ogImage, canonicalUrl, noIndex, imageAlt } = body;
+  const { seoTitle, seoDescription, focusKeyword, ogImage, canonicalUrl, noIndex, imageAlt, kannadaKeyword } = body;
   if (seoTitle !== undefined) article.seoTitle = seoTitle || null;
   if (seoDescription !== undefined) article.seoDescription = seoDescription || null;
   if (focusKeyword !== undefined) article.focusKeyword = focusKeyword || null;
@@ -44,6 +44,7 @@ function applySeoFields(article, body) {
   if (canonicalUrl !== undefined) article.canonicalUrl = canonicalUrl || null;
   if (noIndex !== undefined) article.noIndex = Boolean(noIndex);
   if (imageAlt !== undefined) article.imageAlt = imageAlt || null;
+  if (kannadaKeyword !== undefined) article.kannadaKeyword = kannadaKeyword || null;
 }
 
 // Resolve the best slug: use custom slug if provided and valid, else auto-generate

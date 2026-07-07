@@ -40,6 +40,11 @@ Article.init(
       allowNull: true,
       field: 'image_alt',
     },
+    kannadaKeyword: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: 'kannada_keyword',
+    },
     status: {
       type: DataTypes.ENUM(...STATUSES),
       allowNull: false,

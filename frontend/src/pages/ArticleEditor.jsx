@@ -13,7 +13,7 @@ import MultiCategorySelect from '../components/MultiCategorySelect';
 const emptyForm = {
   title: '', excerpt: '', content: '', featuredImage: '', categoryId: '', authorId: '',
   slug: '', tags: [],
-  seoTitle: '', seoDescription: '', focusKeyword: '', ogImage: '', canonicalUrl: '', noIndex: false, imageAlt: '',
+  seoTitle: '', seoDescription: '', focusKeyword: '', ogImage: '', canonicalUrl: '', noIndex: false, imageAlt: '', kannadaKeyword: '',
   scheduledAt: '',
 };
 
@@ -198,6 +198,7 @@ export default function ArticleEditor() {
           seoDescription: a.seoDescription || '',
           focusKeyword: a.focusKeyword || '',
           imageAlt: a.imageAlt || '',
+          kannadaKeyword: a.kannadaKeyword || '',
           ogImage: a.ogImage || '',
           canonicalUrl: a.canonicalUrl || '',
           noIndex: a.noIndex || false,
@@ -254,6 +255,7 @@ export default function ArticleEditor() {
         seoDescription: g.seoDescription || f.seoDescription,
         focusKeyword: g.focusKeyword || f.focusKeyword,
         imageAlt: g.altText || f.imageAlt,
+        kannadaKeyword: g.kannadaKeyword || f.kannadaKeyword,
         // Auto-fill tags only if none exist yet, so manual tags aren't overwritten
         tags: (f.tags && f.tags.length > 0) ? f.tags : (g.tags || f.tags),
       }));
@@ -504,6 +506,11 @@ export default function ArticleEditor() {
                 <input disabled={readOnly} value={form.focusKeyword} onChange={e => setField('focusKeyword', e.target.value)}
                   className={inputCls()} placeholder="e.g. KSRTC bus fare hike Karnataka" />
               </label>
+              <div className="block">
+                <span className={labelCls}>Kannada keyword</span>
+                <input disabled value={form.kannadaKeyword} readOnly
+                  className={inputCls() + ' bg-ink-50 text-ink-500'} placeholder="Kannada equivalent, set by Generate SEO" />
+              </div>
               <div className="block">
                 <span className={labelCls}>Image alt text</span>
                 <input disabled value={form.imageAlt} readOnly
