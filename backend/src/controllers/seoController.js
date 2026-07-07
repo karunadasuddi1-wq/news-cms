@@ -127,8 +127,13 @@ Rules for tags:
     const kw = focusKeyword.toLowerCase();
     const checks = { headline: parsed.headline, excerpt: parsed.excerpt, seoTitle: parsed.seoTitle, seoDescription: parsed.seoDescription };
     for (const [field, value] of Object.entries(checks)) {
-      if (!String(value || '').toLowerCase().includes(kw)) {
+      const text = String(value || '');
+      if (!text.toLowerCase().includes(kw)) {
         console.warn(`[seo-generate] Focus keyword "${focusKeyword}" missing from ${field}`);
+      }
+      const englishWords = (text.match(/[A-Za-z]+/g) || []).filter(w => w.toLowerCase() !== kw);
+      if (englishWords.length > 0) {
+        console.warn(`[seo-generate] Extra English word(s) beyond keyword "${focusKeyword}" in ${field}: ${englishWords.join(', ')}`);
       }
     }
   }
