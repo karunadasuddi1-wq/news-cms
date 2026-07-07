@@ -1,9 +1,14 @@
 const https = require('https');
 const http = require('http');
 
-const WP_SITE_URL = process.env.WP_SITE_URL || 'https://karunadasuddi.in';
-const WP_APP_USER = process.env.WP_APP_USER || '';
-const WP_APP_PASSWORD = process.env.WP_APP_PASSWORD || '';
+const { getSetting } = require('./settingController');
+
+async function getWpConfig() {
+  const site_url = (await getSetting('wp_site_url', 'WP_SITE_URL')) || 'https://karunadasuddi.in';
+  const username = (await getSetting('wp_username', 'WP_APP_USER')) || '';
+  const password = (await getSetting('wp_app_password', 'WP_APP_PASSWORD')) || '';
+  return { site_url, username, password };
+}
 
 const CATEGORY_MAP = {
   'breaking-news': 4553,
@@ -38,14 +43,15 @@ const CATEGORY_MAP = {
   'union-budget-2025': 772219947,
 };
 
-function wpAuthHeader() {
-  const credentials = Buffer.from(`${WP_APP_USER}:${WP_APP_PASSWORD}`).toString('base64');
+function wpAuthHeader(username, password) {
+  const credentials = Buffer.from(`${username}:${password}`).toString('base64');
   return `Basic ${credentials}`;
 }
 
-function wpRequest(path, options = {}) {
+async function wpRequest(path, options = {}) {
+  const { site_url, username, password } = await getWpConfig();
   return new Promise((resolve, reject) => {
-    const url = new URL(`${WP_SITE_URL}/wp-json/wp/v2${path}`);
+    const url = new URL(`${site_url}/wp-json/wp/v2${path}`);
     const lib = url.protocol === 'https:' ? https : http;
     const opts = {
       hostname: url.hostname,
@@ -54,7 +60,7 @@ function wpRequest(path, options = {}) {
       method: options.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': wpAuthHeader(),
+        'Authorization': wpAuthHeader(username, password),
         'User-Agent': 'PublisherOS-CMS/1.0 (WordPress-Sync; +https://publisheros.in)',
         ...options.headers,
       },
@@ -82,7 +88,7 @@ async function sideloadImage(imageUrl, title) {
     const imageRes = await new Promise((resolve, reject) => {
       const parsed = new URL(imageUrl);
       const lib = parsed.protocol === 'https:' ? https : http;
-      lib.get(imageUrl, { headers: { 'User-Agent': 'KarunadaSuddi-CMS/1.0' } }, res => {
+      lib.get(imageUrl, { headers: { 'User-Agent': 'PublisherOS-CMS/1.0 (WordPress-Sync; +https://publisheros.in)' } }, res => {
         const chunks = [];
         res.on('data', c => chunks.push(c));
         res.on('end', () => resolve({ buffer: Buffer.concat(chunks), headers: res.headers, status: res.statusCode }));

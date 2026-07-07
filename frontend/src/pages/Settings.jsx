@@ -42,6 +42,9 @@ export default function Settings() {
     gemini_model: 'gemini-1.5-flash',
     groq_api_key: '',
     mistral_api_key: '',
+    wp_site_url: '',
+    wp_username: '',
+    wp_app_password: '',
   });
 
   useEffect(() => {
@@ -55,6 +58,8 @@ export default function Settings() {
           site_url: s.site_url || '',
           ai_provider: s.ai_provider || 'anthropic',
           wp_sync_enabled: s.wp_sync_enabled || 'true',
+          wp_site_url: s.wp_site_url || '',
+          wp_username: s.wp_username || '',
         }));
       })
       .catch(err => setError(apiErrorMessage(err)));
@@ -74,6 +79,9 @@ export default function Settings() {
         openai_model: form.openai_model,
         gemini_model: form.gemini_model,
       };
+      payload.wp_site_url = form.wp_site_url;
+      payload.wp_username = form.wp_username;
+      if (form.wp_app_password) payload.wp_app_password = form.wp_app_password;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -87,7 +95,7 @@ export default function Settings() {
       const r = await client.get('/settings');
       setSettings(r.data.settings);
       // Clear key fields
-      setForm(f => ({ ...f, anthropic_api_key: '', openai_api_key: '', gemini_api_key: '', groq_api_key: '', mistral_api_key: '' }));
+      setForm(f => ({ ...f, anthropic_api_key: '', openai_api_key: '', gemini_api_key: '', groq_api_key: '', mistral_api_key: '', wp_app_password: '' }));
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -198,6 +206,36 @@ export default function Settings() {
             <StatusBadge configured={settings?.wp_configured} />
           </div>
           <div className="p-4 space-y-4">
+            <div>
+              <label className={labelCls}>WordPress Site URL</label>
+              <input
+                type="text"
+                value={form.wp_site_url}
+                onChange={e => setField('wp_site_url', e.target.value)}
+                placeholder="https://kannadadunia.com"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>WordPress Username</label>
+              <input
+                type="text"
+                value={form.wp_username}
+                onChange={e => setField('wp_username', e.target.value)}
+                placeholder="Sunil"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Application Password</label>
+              <input
+                type="password"
+                value={form.wp_app_password}
+                onChange={e => setField('wp_app_password', e.target.value)}
+                placeholder="•••• •••• •••• •••• •••• ••••  (leave blank to keep)"
+                className={inputCls}
+              />
+            </div>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

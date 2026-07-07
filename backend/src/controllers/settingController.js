@@ -18,6 +18,8 @@ const getSettings = asyncHandler(async (req, res) => {
     gemini_key_set: !!map.gemini_api_key,
     groq_key_set: !!map.groq_api_key,
     mistral_key_set: !!map.mistral_api_key,
+    wp_site_url: map.wp_site_url || process.env.WP_SITE_URL || '',
+    wp_username: map.wp_username || process.env.WP_APP_USER || '',
     wp_configured: !!(map.wp_app_password || process.env.WP_APP_PASSWORD),
   };
   res.json({ settings: safeMap });
@@ -33,6 +35,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'site_name', 'site_url', 'ai_provider', 'wp_sync_enabled',
     'anthropic_api_key', 'openai_api_key', 'gemini_api_key',
     'groq_api_key', 'mistral_api_key', 'openai_model', 'gemini_model',
+    'wp_site_url', 'wp_username', 'wp_app_password',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {
