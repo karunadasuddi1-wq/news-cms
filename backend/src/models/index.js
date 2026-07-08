@@ -5,6 +5,7 @@ const Article = require('./Article');
 const Page = require('./Page');
 const Setting = require('./Setting');
 const AiUsageLog = require('./AiUsageLog');
+const UserActivity = require('./UserActivity');
 
 // Article associations
 Article.belongsTo(User, { as: 'author', foreignKey: { name: 'authorId', field: 'author_id', allowNull: false } });
@@ -16,9 +17,13 @@ Category.hasMany(Article, { as: 'articles', foreignKey: { name: 'categoryId', fi
 // AI usage log associations (needed for the AI Costs dashboard's include: [{ model: User, as: 'user' }])
 AiUsageLog.belongsTo(User, { as: 'user', foreignKey: { name: 'userId', field: 'user_id' } });
 
+// User activity associations (needed for the daily activity report's include: [{ model: User, as: 'user' }])
+UserActivity.belongsTo(User, { as: 'user', foreignKey: { name: 'userId', field: 'user_id' } });
+
 module.exports = {
   Setting,
   AiUsageLog,
+  UserActivity,
   sequelize,
   User,
   Category,

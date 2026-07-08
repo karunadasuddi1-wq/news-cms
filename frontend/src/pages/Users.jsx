@@ -18,6 +18,15 @@ export default function Users() {
   const [editing, setEditing] = useState(null);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [activity, setActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  useEffect(() => {
+    client.get('/users/activity?days=7')
+      .then((res) => setActivity(res.data.report))
+      .catch(() => {})
+      .finally(() => setActivityLoading(false));
+  }, []);
 
   function load() {
     setLoading(true);
@@ -162,6 +171,40 @@ export default function Users() {
           ))}
         </div>
       )}
+
+      <div className="mt-10">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400 mb-3">
+          Last 7 Days — Active Time
+        </p>
+        {activityLoading ? (
+          <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-6 text-center">
+            Loading…
+          </p>
+        ) : activity.length === 0 ? (
+          <p className="text-sm text-ink-400 py-4">No activity recorded yet.</p>
+        ) : (
+          <div className="bg-white border border-paper-200 rounded-lg divide-y divide-paper-100">
+            {activity.map((a) => (
+              <div key={`${a.userId}-${a.date}`} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-mono text-xs text-ink-400 w-24 shrink-0">{a.date}</span>
+                  <span className="font-medium text-ink-900 truncate">{a.name}</span>
+                  <span
+                    className="stamp text-[10px]"
+                    style={{ color: ROLE_COLORS[a.role], transform: 'rotate(0deg)' }}
+                  >
+                    {a.role}
+                  </span>
+                </div>
+                <span className="font-mono text-xs text-ink-700 shrink-0">{a.activeFormatted}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-ink-400 mt-2">
+          Active time is measured from real usage of the CMS, excluding gaps longer than 5 minutes — leaving a tab open doesn't count as active time.
+        </p>
+      </div>
 
       {editing && (
         <Modal title={editing.id ? `Edit ${editing.name}` : 'Add staff member'} onClose={() => setEditing(null)}>

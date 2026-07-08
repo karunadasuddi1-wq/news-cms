@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
 const { User } = require('../models');
+const { recordActivity } = require('./activityTracker');
 
 async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -19,6 +20,7 @@ async function requireAuth(req, res, next) {
     }
 
     req.user = user;
+    recordActivity(user.id); // fire-and-forget — never awaited, never blocks the request
     return next();
   } catch (err) {
     return res.status(401).json({ error: 'Your session has expired. Sign in again.' });
