@@ -8,17 +8,41 @@ const inputCls = 'w-full border border-paper-200 rounded px-3 py-2 text-sm focus
 const selectCls = `${inputCls} cursor-pointer`;
 
 const PROVIDERS = [
-  { value: 'anthropic', label: 'Anthropic (Claude)', models: ['claude-sonnet-4-6', 'claude-haiku-4-5'] },
-  { value: 'openai', label: 'OpenAI (ChatGPT)', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] },
-  { value: 'gemini', label: 'Google Gemini', models: ['gemini-1.5-flash', 'gemini-1.5-pro'] },
-  { value: 'groq', label: 'Groq (Llama)', models: ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'] },
-  { value: 'mistral', label: 'Mistral AI', models: ['mistral-large-latest', 'mistral-medium'] },
+  { value: 'anthropic', label: 'Anthropic (Claude)', models: ['claude-sonnet-4-6', 'claude-sonnet-5'] },
+  { value: 'openai', label: 'OpenAI (ChatGPT)', models: ['gpt-5.5', 'gpt-5.5-pro'] },
+  { value: 'gemini', label: 'Google Gemini', models: ['gemini-3.5-flash', 'gemini-3.1-flash-lite'] },
+  { value: 'groq', label: 'Groq (Llama)', models: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'] },
+  { value: 'mistral', label: 'Mistral AI', models: ['mistral-large-latest'] },
 ];
+
+// Manually maintained model status notes. Add an entry here whenever a provider announces
+// a deprecation or a newer recommended model, so users see a heads-up before anything breaks.
+// status: 'legacy' = still works, but a newer model is recommended.
+//         'retiring' = has an announced shutdown date — upgrade before then.
+const MODEL_INFO = {
+  'claude-sonnet-4-6': {
+    status: 'legacy',
+    message: 'Still fully supported. claude-sonnet-5 (newer, stronger on agentic/coding tasks) is now available.',
+  },
+  // Example of how to flag an upcoming retirement once a date is announced:
+  // 'some-model-id': { status: 'retiring', message: 'Retires Aug 2026 — switch to some-newer-model.' },
+};
 
 function StatusBadge({ configured }) {
   return configured
     ? <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-wire-teal/10 text-wire-teal-dark border border-wire-teal/20">✓ Configured</span>
     : <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-press-red/10 text-press-red border border-press-red/20">✗ Not set</span>;
+}
+
+function ModelWarning({ model }) {
+  const info = MODEL_INFO[model];
+  if (!info) return null;
+  const isRetiring = info.status === 'retiring';
+  return (
+    <p className={`text-[10px] mt-1 leading-snug ${isRetiring ? 'text-press-red' : 'text-amber-600'}`}>
+      {isRetiring ? '⚠ ' : 'ℹ '}{info.message}
+    </p>
+  );
 }
 
 export default function Settings() {
@@ -36,12 +60,15 @@ export default function Settings() {
     ai_provider: 'anthropic',
     wp_sync_enabled: 'true',
     anthropic_api_key: '',
+    anthropic_model: 'claude-sonnet-4-6',
     openai_api_key: '',
-    openai_model: 'gpt-4o',
+    openai_model: 'gpt-5.5',
     gemini_api_key: '',
-    gemini_model: 'gemini-1.5-flash',
+    gemini_model: 'gemini-3.5-flash',
     groq_api_key: '',
+    groq_model: 'openai/gpt-oss-20b',
     mistral_api_key: '',
+    mistral_model: 'mistral-large-latest',
     wp_site_url: '',
     wp_username: '',
     wp_app_password: '',
@@ -60,6 +87,11 @@ export default function Settings() {
           wp_sync_enabled: s.wp_sync_enabled || 'true',
           wp_site_url: s.wp_site_url || '',
           wp_username: s.wp_username || '',
+          anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
+          openai_model: s.openai_model || 'gpt-5.5',
+          gemini_model: s.gemini_model || 'gemini-3.5-flash',
+          groq_model: s.groq_model || 'openai/gpt-oss-20b',
+          mistral_model: s.mistral_model || 'mistral-large-latest',
         }));
       })
       .catch(err => setError(apiErrorMessage(err)));
@@ -76,8 +108,11 @@ export default function Settings() {
         site_url: form.site_url,
         ai_provider: form.ai_provider,
         wp_sync_enabled: form.wp_sync_enabled,
+        anthropic_model: form.anthropic_model,
         openai_model: form.openai_model,
         gemini_model: form.gemini_model,
+        groq_model: form.groq_model,
+        mistral_model: form.mistral_model,
       };
       payload.wp_site_url = form.wp_site_url;
       payload.wp_username = form.wp_username;
@@ -182,15 +217,14 @@ export default function Settings() {
                       onChange={e => setField(keyField, e.target.value)}
                       autoComplete="off"
                     />
-                    {(p.value === 'openai' || p.value === 'gemini') && (
-                      <select
-                        className="w-full mt-1.5 border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
-                        value={form[`${p.value}_model`]}
-                        onChange={e => setField(`${p.value}_model`, e.target.value)}
-                      >
-                        {p.models.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                    )}
+                    <select
+                      className="w-full mt-1.5 border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
+                      value={form[`${p.value}_model`]}
+                      onChange={e => setField(`${p.value}_model`, e.target.value)}
+                    >
+                      {p.models.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <ModelWarning model={form[`${p.value}_model`]} />
                   </div>
                 );
               })}

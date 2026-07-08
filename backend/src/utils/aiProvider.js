@@ -33,16 +33,16 @@ function httpsPost(hostname, path, headers, body) {
   });
 }
 
-async function callAnthropic(apiKey, systemPrompt, userPrompt, maxTokens) {
+async function callAnthropic(apiKey, systemPrompt, userPrompt, maxTokens, model = 'claude-sonnet-4-6') {
   const res = await httpsPost('api.anthropic.com', '/v1/messages',
     { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-    { model: 'claude-sonnet-4-6', max_tokens: maxTokens, system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] }
+    { model, max_tokens: maxTokens, system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] }
   );
   if (res.status !== 200) throw new Error(res.data?.error?.message || `Anthropic error (${res.status})`);
   return res.data.content?.find(b => b.type === 'text')?.text || '';
 }
 
-async function callOpenAI(apiKey, systemPrompt, userPrompt, maxTokens, model = 'gpt-4o') {
+async function callOpenAI(apiKey, systemPrompt, userPrompt, maxTokens, model = 'gpt-5.5') {
   const res = await httpsPost('api.openai.com', '/v1/chat/completions',
     { 'Authorization': `Bearer ${apiKey}` },
     { model, max_tokens: maxTokens, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }
@@ -51,7 +51,7 @@ async function callOpenAI(apiKey, systemPrompt, userPrompt, maxTokens, model = '
   return res.data.choices?.[0]?.message?.content || '';
 }
 
-async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens, model = 'gemini-1.5-flash') {
+async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens, model = 'gemini-3.5-flash') {
   const res = await httpsPost('generativelanguage.googleapis.com',
     `/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {},
@@ -61,7 +61,7 @@ async function callGemini(apiKey, systemPrompt, userPrompt, maxTokens, model = '
   return res.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-async function callGroq(apiKey, systemPrompt, userPrompt, maxTokens, model = 'llama-3.1-70b-versatile') {
+async function callGroq(apiKey, systemPrompt, userPrompt, maxTokens, model = 'openai/gpt-oss-20b') {
   const res = await httpsPost('api.groq.com', '/openai/v1/chat/completions',
     { 'Authorization': `Bearer ${apiKey}` },
     { model, max_tokens: maxTokens, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }
@@ -97,37 +97,37 @@ async function callAI(systemPrompt, userPrompt, maxTokens = 4000, options = {}) 
     case 'openai': {
       const key = await getSetting('openai_api_key', 'OPENAI_API_KEY');
       if (!key) throw new Error('OpenAI API key not configured.');
-      modelUsed = await getSetting('openai_model', null) || 'gpt-4o';
+      modelUsed = await getSetting('openai_model', null) || 'gpt-5.5';
       result = await callOpenAI(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
     case 'gemini': {
       const key = await getSetting('gemini_api_key', 'GEMINI_API_KEY');
       if (!key) throw new Error('Google Gemini API key not configured.');
-      modelUsed = await getSetting('gemini_model', null) || 'gemini-1.5-flash';
+      modelUsed = await getSetting('gemini_model', null) || 'gemini-3.5-flash';
       result = await callGemini(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
     case 'groq': {
       const key = await getSetting('groq_api_key', 'GROQ_API_KEY');
       if (!key) throw new Error('Groq API key not configured.');
-      modelUsed = 'llama-3.1-70b-versatile';
-      result = await callGroq(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = await getSetting('groq_model', null) || 'openai/gpt-oss-20b';
+      result = await callGroq(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
     case 'mistral': {
       const key = await getSetting('mistral_api_key', 'MISTRAL_API_KEY');
       if (!key) throw new Error('Mistral API key not configured.');
-      modelUsed = 'mistral-large-latest';
-      result = await callMistral(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = await getSetting('mistral_model', null) || 'mistral-large-latest';
+      result = await callMistral(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
     case 'anthropic':
     default: {
       const key = await getSetting('anthropic_api_key', 'ANTHROPIC_API_KEY');
       if (!key) throw new Error('Anthropic API key not configured.');
-      modelUsed = 'claude-sonnet-4-6';
-      result = await callAnthropic(key, systemPrompt, userPrompt, maxTokens);
+      modelUsed = await getSetting('anthropic_model', null) || 'claude-sonnet-4-6';
+      result = await callAnthropic(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
   }
