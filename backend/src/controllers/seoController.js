@@ -2,40 +2,15 @@ const asyncHandler = require('../utils/asyncHandler');
 const { generateUniqueSlug } = require('../utils/slug');
 const { Article } = require('../models');
 const { callAI } = require('../utils/aiProvider');
-
-function extractJson(text) {
-  try { return JSON.parse(text.trim()); } catch {}
-  const stripped = text.replace(/```(?:json)?/gi, '').trim();
-  try { return JSON.parse(stripped); } catch {}
-  const match = text.match(/\{[\s\S]*\}/);
-  if (match) { try { return JSON.parse(match[0]); } catch {} }
-
-  function extract(key) {
-    const re = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 'i');
-    const m = text.match(re); return m ? m[1].replace(/\\"/g, '"') : '';
-  }
-  // For tags array
-  function extractArray(key) {
-    const re = new RegExp(`"${key}"\\s*:\\s*\\[([^\\]]*)\\]`, 'i');
-    const m = text.match(re);
-    if (!m) return [];
-    return m[1].split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
-  }
-
-  const headline = extract('headline');
-  if (headline) {
-    return {
-      headline,
-      slug: extract('slug'),
-      excerpt: extract('excerpt'),
-      seoTitle: extract('seoTitle'),
-      seoDescription: extract('seoDescription'),
-      focusKeyword: extract('focusKeyword'),
-      tags: extractArray('tags'),
-    };
-  }
-  return null;
-}
+const {
+  extractJson,
+  extractFocusKeyword,
+  slugifyKeyword,
+  buildBaseSlug,
+  buildTags,
+  checkFocusKeywordCoverage,
+  checkKannadaKeywordCoverage,
+} = require('../utils/seoHelpers');
 
 const generateSeo = asyncHandler(async (req, res) => {
   const { title = '', content = '', existingArticleId } = req.body;
@@ -95,21 +70,10 @@ Rules for tags:
     });
   }
 
-  const focusKeyword = (parsed.focusKeyword || '').trim().split(/\s+/)[0] || '';
-  const keywordSlugPart = focusKeyword
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+  const focusKeyword = extractFocusKeyword(parsed.focusKeyword);
+  const keywordSlugPart = slugifyKeyword(focusKeyword);
 
-  let baseSlug = (parsed.slug || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 60);
-
-  if (keywordSlugPart && !baseSlug.includes(keywordSlugPart)) {
-    baseSlug = `${keywordSlugPart}-${baseSlug}`.replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
-  }
+  const baseSlug = buildBaseSlug(parsed.slug, keywordSlugPart);
 
   const uniqueSlug = await generateUniqueSlug(
     Article,
@@ -119,42 +83,24 @@ Rules for tags:
 
   const altText = uniqueSlug;
 
-  let tags = (Array.isArray(parsed.tags) ? parsed.tags : [])
-    .map(t => String(t).toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))
-    .filter(t => t.length >= 2 && t.length <= 50);
-  if (keywordSlugPart && !tags.includes(keywordSlugPart)) {
-    tags = [keywordSlugPart, ...tags];
-  }
-  tags = tags.slice(0, 6);
+  const tags = buildTags(parsed.tags, keywordSlugPart);
 
   const kannadaKeyword = parsed.kannadaKeyword || '';
 
-  if (focusKeyword) {
-    const kw = focusKeyword.toLowerCase();
-    const checks = { headline: parsed.headline, excerpt: parsed.excerpt, seoTitle: parsed.seoTitle, seoDescription: parsed.seoDescription };
-    for (const [field, value] of Object.entries(checks)) {
-      const text = String(value || '');
-      if (!text.toLowerCase().includes(kw)) {
-        console.warn(`[seo-generate] Focus keyword "${focusKeyword}" missing from ${field}`);
-      }
-      const englishWords = (text.match(/[A-Za-z]+/g) || []).filter(w => w.toLowerCase() !== kw);
-      if (englishWords.length > 0) {
-        console.warn(`[seo-generate] Extra English word(s) beyond keyword "${focusKeyword}" in ${field}: ${englishWords.join(', ')}`);
-      }
-    }
-  }
+  const focusWarnings = checkFocusKeywordCoverage(focusKeyword, {
+    headline: parsed.headline,
+    excerpt: parsed.excerpt,
+    seoTitle: parsed.seoTitle,
+    seoDescription: parsed.seoDescription,
+  });
+  focusWarnings.forEach(w => console.warn(`[seo-generate] ${w}`));
 
-  if (kannadaKeyword) {
-    const requiredFields = { headline: parsed.headline, seoTitle: parsed.seoTitle, seoDescription: parsed.seoDescription };
-    for (const [field, value] of Object.entries(requiredFields)) {
-      if (!String(value || '').includes(kannadaKeyword)) {
-        console.warn(`[seo-generate] Kannada keyword "${kannadaKeyword}" missing from ${field}`);
-      }
-    }
-    if (!contentPreview.includes(kannadaKeyword)) {
-      console.warn(`[seo-generate] Kannada keyword "${kannadaKeyword}" was not actually found in the article's first paragraph — AI may have invented it instead of sourcing it`);
-    }
-  }
+  const kannadaWarnings = checkKannadaKeywordCoverage(kannadaKeyword, {
+    headline: parsed.headline,
+    seoTitle: parsed.seoTitle,
+    seoDescription: parsed.seoDescription,
+  }, contentPreview);
+  kannadaWarnings.forEach(w => console.warn(`[seo-generate] ${w}`));
 
   res.json({
     headline: parsed.headline || '',
