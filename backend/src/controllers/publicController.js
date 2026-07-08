@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Article, User, Category } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { generateArticleSchema } = require('../utils/schemaGenerator');
 
 const INCLUDE = [
   { model: User, as: 'author', attributes: ['id', 'name', 'bio', 'avatar', 'socialLinks'] },
@@ -70,7 +71,9 @@ const getArticle = asyncHandler(async (req, res) => {
   // Increment view counter (fire and forget — don't block the response)
   Article.increment('views', { by: 1, where: { id: article.id } }).catch(() => {});
 
-  res.json({ article });
+  const schema = await generateArticleSchema(article);
+
+  res.json({ article, schema });
 });
 
 // GET /api/public/sitemap  — returns all published article slugs + dates for sitemap generation

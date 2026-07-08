@@ -75,6 +75,8 @@ export default function Settings() {
     wp_site_url: '',
     wp_username: '',
     wp_app_password: '',
+    site_logo_url: '',
+    wp_inject_schema: 'false',
   });
 
   useEffect(() => {
@@ -90,6 +92,8 @@ export default function Settings() {
           wp_sync_enabled: s.wp_sync_enabled || 'true',
           wp_site_url: s.wp_site_url || '',
           wp_username: s.wp_username || '',
+          site_logo_url: s.site_logo_url || '',
+          wp_inject_schema: s.wp_inject_schema || 'false',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -122,6 +126,8 @@ export default function Settings() {
       payload.wp_site_url = form.wp_site_url;
       payload.wp_username = form.wp_username;
       if (form.wp_app_password) payload.wp_app_password = form.wp_app_password;
+      payload.site_logo_url = form.site_logo_url;
+      payload.wp_inject_schema = form.wp_inject_schema;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -185,6 +191,11 @@ export default function Settings() {
             <div>
               <label className={labelCls}>Site URL</label>
               <input className={inputCls} type="url" value={form.site_url} onChange={e => setField('site_url', e.target.value)} placeholder="https://karunadasuddi.in" />
+            </div>
+            <div>
+              <label className={labelCls}>Site Logo URL</label>
+              <input className={inputCls} type="url" value={form.site_logo_url} onChange={e => setField('site_logo_url', e.target.value)} placeholder="https://example.com/logo.png" />
+              <p className="text-xs text-ink-400 mt-1">Used in schema markup (publisher logo). Optional.</p>
             </div>
           </div>
         </div>
@@ -287,6 +298,18 @@ export default function Settings() {
                 <span className="text-sm text-ink-700">Auto-sync articles to WordPress on publish</span>
               </label>
             </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.wp_inject_schema === 'true'}
+                  onChange={e => setField('wp_inject_schema', e.target.checked ? 'true' : 'false')}
+                  className="w-4 h-4 accent-press-red"
+                />
+                <span className="text-sm text-ink-700">Inject NewsArticle schema markup into WordPress posts</span>
+              </label>
+            </div>
+            <p className="text-xs text-ink-400">Leave off if an SEO plugin (Rank Math, Yoast, etc.) already handles schema on this site — enabling both causes duplicate/conflicting schema.</p>
             <div className="flex items-center gap-3">
               <button type="button" onClick={testWp} disabled={wpTesting}
                 className="px-4 py-2 text-xs font-mono uppercase tracking-wide border border-paper-200 rounded hover:bg-paper-50 transition-colors disabled:opacity-60">

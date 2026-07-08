@@ -2,6 +2,7 @@ const https = require('https');
 const http = require('http');
 
 const { getSetting } = require('./settingController');
+const { generateArticleSchema } = require('../utils/schemaGenerator');
 
 async function getWpConfig() {
   const site_url = (await getSetting('wp_site_url', 'WP_SITE_URL')) || 'https://karunadasuddi.in';
@@ -184,9 +185,16 @@ async function syncToWordPress(article, categorySlug) {
   const featuredMediaId = await sideloadImage(article.featuredImage, article.title, article.imageAlt);
   const wpCategories = await mapCategory(categorySlug);
 
+  const injectSchema = (await getSetting('wp_inject_schema', null)) === 'true';
+  let contentWithSchema = article.content || '';
+  if (injectSchema) {
+    const schema = await generateArticleSchema(article);
+    contentWithSchema += `\n<script type="application/ld+json">${JSON.stringify(schema)}</script>`;
+  }
+
   const payload = {
     title: article.title,
-    content: article.content || '',
+    content: contentWithSchema,
     excerpt: article.excerpt || '',
     status: 'publish',
     slug: article.slug,

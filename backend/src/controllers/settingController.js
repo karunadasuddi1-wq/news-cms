@@ -28,6 +28,8 @@ const getSettings = asyncHandler(async (req, res) => {
     wp_site_url: map.wp_site_url || process.env.WP_SITE_URL || '',
     wp_username: map.wp_username || process.env.WP_APP_USER || '',
     wp_configured: !!(map.wp_app_password || process.env.WP_APP_PASSWORD),
+    site_logo_url: map.site_logo_url || '',
+    wp_inject_schema: map.wp_inject_schema || 'false',
   };
   res.json({ settings: safeMap });
 });
@@ -45,6 +47,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'anthropic_model', 'openai_model', 'gemini_model', 'groq_model', 'mistral_model', 'deepseek_model',
     'wp_site_url', 'wp_username', 'wp_app_password',
     'wp_category_map', 'wp_default_category_id',
+    'site_logo_url', 'wp_inject_schema',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {
