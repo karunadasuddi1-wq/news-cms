@@ -154,6 +154,20 @@ describe('checkFocusKeywordCoverage', () => {
   it('returns no warnings when no keyword was provided', () => {
     expect(checkFocusKeywordCoverage('', { headline: 'anything' })).toHaveLength(0);
   });
+
+  it('does NOT flag extra English words when checkExtraEnglishWords is false — needed for English-language sites, where every word is naturally English', () => {
+    const warnings = checkFocusKeywordCoverage('Budget', {
+      headline: 'Union Budget 2026 announced today with major tax changes',
+    }, { checkExtraEnglishWords: false });
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('still flags a missing keyword even when checkExtraEnglishWords is false', () => {
+    const warnings = checkFocusKeywordCoverage('Budget', {
+      headline: 'Completely unrelated headline text',
+    }, { checkExtraEnglishWords: false });
+    expect(warnings.some(w => w.includes('missing from headline'))).toBe(true);
+  });
 });
 
 describe('checkKannadaKeywordCoverage', () => {

@@ -70,7 +70,8 @@ function buildTags(rawTags, keywordSlugPart) {
   return tags.slice(0, 6);
 }
 
-function checkFocusKeywordCoverage(focusKeyword, fields) {
+function checkFocusKeywordCoverage(focusKeyword, fields, options = {}) {
+  const { checkExtraEnglishWords = true } = options;
   const warnings = [];
   if (!focusKeyword) return warnings;
 
@@ -80,9 +81,11 @@ function checkFocusKeywordCoverage(focusKeyword, fields) {
     if (!text.toLowerCase().includes(kw)) {
       warnings.push(`Focus keyword "${focusKeyword}" missing from ${field}`);
     }
-    const englishWords = (text.match(/[A-Za-z]+/g) || []).filter(w => w.toLowerCase() !== kw);
-    if (englishWords.length > 0) {
-      warnings.push(`Extra English word(s) beyond keyword "${focusKeyword}" in ${field}: ${englishWords.join(', ')}`);
+    if (checkExtraEnglishWords) {
+      const englishWords = (text.match(/[A-Za-z]+/g) || []).filter(w => w.toLowerCase() !== kw);
+      if (englishWords.length > 0) {
+        warnings.push(`Extra English word(s) beyond keyword "${focusKeyword}" in ${field}: ${englishWords.join(', ')}`);
+      }
     }
   }
   return warnings;

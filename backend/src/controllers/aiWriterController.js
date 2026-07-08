@@ -3,6 +3,8 @@ const { callAI } = require('../utils/aiProvider');
 const asyncHandler = require('../utils/asyncHandler');
 const { Article, Category } = require('../models');
 const { generateUniqueSlug } = require('../utils/slug');
+const { getSetting } = require('./settingController');
+const { getLanguageConfig, DEFAULT_LANGUAGE } = require('../utils/languages');
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
@@ -193,11 +195,17 @@ const rewrite = asyncHandler(async (req, res) => {
 
   const toneLabel = TONE_LABELS[tone] || TONE_LABELS.neutral;
 
-  const systemPrompt = `You are an expert Kannada news editor and rewriter for a Karnataka news website.
-Your job: take a source article (which may be in English, Hindi, Telugu, Tamil, or any language) and produce a COMPLETELY ORIGINAL Kannada news article — not a translation.
+  const langKey = (await getSetting('content_language', null)) || DEFAULT_LANGUAGE;
+  const lang = getLanguageConfig(langKey);
+  const languageInstruction = lang.isEnglish
+    ? 'Write entirely in clear, natural English using standard journalistic style.'
+    : `Write entirely in natural, fluent ${lang.label} (${lang.nativeName}) using standard journalistic style.`;
+
+  const systemPrompt = `You are an expert news editor and rewriter for a ${lang.label} news website.
+Your job: take a source article (which may be in English or any other language) and produce a COMPLETELY ORIGINAL ${lang.label} news article — not a translation.
 
 Rules you must follow:
-1. Write entirely in natural, fluent Kannada (ಕನ್ನಡ) using standard journalistic style.
+1. ${languageInstruction}
 2. This must be a genuine rewrite: different sentence structure, different paragraph order where sensible, fresh wording throughout. Do not mirror the source's sentence-by-sentence structure.
 3. Preserve all facts, names, numbers, dates, places, and direct quotes accurately. Never invent or alter facts.
 4. Tone: ${toneLabel}.
@@ -205,11 +213,11 @@ Rules you must follow:
 6. Do not include the source URL, byline, or any meta-commentary in the body.
 7. Output ONLY valid JSON (no markdown fences, no commentary) with this exact shape:
 {
-  "title": "Kannada headline, under 70 characters, attention-grabbing but accurate",
-  "excerpt": "1-2 sentence Kannada summary, under 200 characters",
-  "content": "Full Kannada article body as HTML using <p> tags for paragraphs",
-  "seoTitle": "SEO-friendly Kannada title, under 60 characters",
-  "seoDescription": "SEO meta description in Kannada, under 155 characters",
+  "title": "${lang.label} headline, under 70 characters, attention-grabbing but accurate",
+  "excerpt": "1-2 sentence ${lang.label} summary, under 200 characters",
+  "content": "Full ${lang.label} article body as HTML using <p> tags for paragraphs",
+  "seoTitle": "SEO-friendly ${lang.label} title, under 60 characters",
+  "seoDescription": "SEO meta description in ${lang.label}, under 155 characters",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
 Tags should be short lowercase English slugs (e.g. "karnataka-politics", "siddaramaiah") relevant to the story, max 6 tags.`;

@@ -31,6 +31,7 @@ const getSettings = asyncHandler(async (req, res) => {
     site_logo_url: map.site_logo_url || '',
     wp_inject_schema: map.wp_inject_schema || 'false',
     activity_idle_threshold_minutes: map.activity_idle_threshold_minutes || '5',
+    content_language: map.content_language || 'kannada',
   };
   res.json({ settings: safeMap });
 });
@@ -50,6 +51,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'wp_category_map', 'wp_default_category_id',
     'site_logo_url', 'wp_inject_schema',
     'activity_idle_threshold_minutes',
+    'content_language',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {
