@@ -38,6 +38,7 @@ export default function AiWriter() {
   const [fetchingUrl, setFetchingUrl] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingItemLink, setGeneratingItemLink] = useState(null); // tracks which trending item is being rewritten
+  const [contentLanguageLabel, setContentLanguageLabel] = useState('Kannada');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -60,6 +61,15 @@ export default function AiWriter() {
 
   useEffect(() => {
     client.get('/categories').then(r => setCategories(r.data.categories || []));
+    client.get('/settings').then(r => {
+      const key = r.data.settings?.content_language || 'kannada';
+      const labels = {
+        kannada: 'Kannada', hindi: 'Hindi', tamil: 'Tamil', telugu: 'Telugu',
+        malayalam: 'Malayalam', marathi: 'Marathi', bengali: 'Bengali',
+        gujarati: 'Gujarati', punjabi: 'Punjabi', urdu: 'Urdu', english: 'English',
+      };
+      setContentLanguageLabel(labels[key] || 'Kannada');
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -178,7 +188,7 @@ export default function AiWriter() {
     <div className="px-4 py-6 lg:px-8 lg:py-10 max-w-4xl mx-auto">
       <h1 className="font-display font-bold text-2xl text-ink-900 mb-1">✦ AI Writer</h1>
       <p className="text-sm text-ink-500 mb-6">
-        Paste any article in any language. The AI will completely rewrite it in original Kannada —
+        Paste any article in any language. The AI will completely rewrite it in original {contentLanguageLabel} —
         different structure, fresh wording, zero plagiarism.
       </p>
 
@@ -343,7 +353,7 @@ export default function AiWriter() {
       <div className="bg-wire-teal/5 border border-wire-teal/20 rounded p-4 mb-5">
         <p className="text-xs font-mono uppercase tracking-wide text-wire-teal-dark font-bold mb-2">✓ What the AI does</p>
         <ul className="space-y-1 text-xs text-ink-600">
-          <li>Completely rewrites in original Kannada — not a translation</li>
+          <li>Completely rewrites in original {contentLanguageLabel} — not a translation</li>
           <li>Changes sentence structure, order, and wording</li>
           <li>Preserves all facts, names, dates, and figures</li>
           <li>Generates SEO title, meta description, and tags</li>
@@ -358,7 +368,7 @@ export default function AiWriter() {
       >
         {generating
           ? <><span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating…</>
-          : <>✦ Generate Kannada Article</>}
+          : <>✦ Generate {contentLanguageLabel} Article</>}
       </button>
 
       {/* ── Result preview ── */}

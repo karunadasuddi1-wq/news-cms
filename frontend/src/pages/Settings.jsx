@@ -78,6 +78,7 @@ export default function Settings() {
     site_logo_url: '',
     wp_inject_schema: 'false',
     activity_idle_threshold_minutes: '5',
+    content_language: 'kannada',
   });
 
   useEffect(() => {
@@ -96,6 +97,7 @@ export default function Settings() {
           site_logo_url: s.site_logo_url || '',
           wp_inject_schema: s.wp_inject_schema || 'false',
           activity_idle_threshold_minutes: s.activity_idle_threshold_minutes || '5',
+          content_language: s.content_language || 'kannada',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -131,6 +133,7 @@ export default function Settings() {
       payload.site_logo_url = form.site_logo_url;
       payload.wp_inject_schema = form.wp_inject_schema;
       payload.activity_idle_threshold_minutes = form.activity_idle_threshold_minutes;
+      payload.content_language = form.content_language;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -199,6 +202,34 @@ export default function Settings() {
               <label className={labelCls}>Site Logo URL</label>
               <input className={inputCls} type="url" value={form.site_logo_url} onChange={e => setField('site_logo_url', e.target.value)} placeholder="https://example.com/logo.png" />
               <p className="text-xs text-ink-400 mt-1">Used in schema markup (publisher logo). Optional.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Language */}
+        <div className="border border-paper-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-paper-50 border-b border-paper-200">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">🌐 Content Language</h2>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className={labelCls}>Language</label>
+              <select className={selectCls} value={form.content_language} onChange={e => setField('content_language', e.target.value)}>
+                <option value="kannada">Kannada</option>
+                <option value="hindi">Hindi</option>
+                <option value="tamil">Tamil</option>
+                <option value="telugu">Telugu</option>
+                <option value="malayalam">Malayalam</option>
+                <option value="marathi">Marathi</option>
+                <option value="bengali">Bengali</option>
+                <option value="gujarati">Gujarati</option>
+                <option value="punjabi">Punjabi</option>
+                <option value="urdu">Urdu</option>
+                <option value="english">English</option>
+              </select>
+              <p className="text-xs text-ink-400 mt-1">
+                Controls the language used by AI Writer and Generate SEO. Regional languages use a single English keyword mixed into native-script text; English uses standard SEO keyword phrases.
+              </p>
             </div>
           </div>
         </div>

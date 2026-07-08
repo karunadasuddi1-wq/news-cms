@@ -172,10 +172,21 @@ export default function ArticleEditor() {
   const [seoOpen, setSeoOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [contentLanguageLabel, setContentLanguageLabel] = useState('Kannada');
+
+  const LANGUAGE_LABELS = {
+    kannada: 'Kannada', hindi: 'Hindi', tamil: 'Tamil', telugu: 'Telugu',
+    malayalam: 'Malayalam', marathi: 'Marathi', bengali: 'Bengali',
+    gujarati: 'Gujarati', punjabi: 'Punjabi', urdu: 'Urdu', english: 'English',
+  };
 
   useEffect(() => {
     client.get('/categories').then(r => setCategories(r.data.categories));
     if (can.manageAny) client.get('/users').then(r => setStaff(r.data.users));
+    client.get('/settings').then(r => {
+      const key = r.data.settings?.content_language || 'kannada';
+      setContentLanguageLabel(LANGUAGE_LABELS[key] || 'Kannada');
+    }).catch(() => {});
   }, [can.manageAny]);
 
   useEffect(() => {
@@ -506,11 +517,13 @@ export default function ArticleEditor() {
                 <input disabled={readOnly} value={form.focusKeyword} onChange={e => setField('focusKeyword', e.target.value)}
                   className={inputCls()} placeholder="e.g. KSRTC bus fare hike Karnataka" />
               </label>
-              <div className="block">
-                <span className={labelCls}>Kannada keyword</span>
-                <input disabled value={form.kannadaKeyword} readOnly
-                  className={inputCls() + ' bg-ink-50 text-ink-500'} placeholder="Kannada equivalent, set by Generate SEO" />
-              </div>
+              {contentLanguageLabel !== 'English' && (
+                <div className="block">
+                  <span className={labelCls}>{contentLanguageLabel} keyword</span>
+                  <input disabled value={form.kannadaKeyword} readOnly
+                    className={inputCls() + ' bg-ink-50 text-ink-500'} placeholder={contentLanguageLabel + ' equivalent, set by Generate SEO'} />
+                </div>
+              )}
               <div className="block">
                 <span className={labelCls}>Image alt text</span>
                 <input disabled value={form.imageAlt} readOnly
