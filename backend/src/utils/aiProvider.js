@@ -79,6 +79,15 @@ async function callMistral(apiKey, systemPrompt, userPrompt, maxTokens, model = 
   return res.data.choices?.[0]?.message?.content || '';
 }
 
+async function callDeepSeek(apiKey, systemPrompt, userPrompt, maxTokens, model = 'deepseek-v4-flash') {
+  const res = await httpsPost('api.deepseek.com', '/chat/completions',
+    { 'Authorization': `Bearer ${apiKey}` },
+    { model, max_tokens: maxTokens, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }
+  );
+  if (res.status !== 200) throw new Error(res.data?.error?.message || `DeepSeek error (${res.status})`);
+  return res.data.choices?.[0]?.message?.content || '';
+}
+
 /**
  * Main function — call this from any controller
  * Automatically picks the active provider and API key
@@ -120,6 +129,13 @@ async function callAI(systemPrompt, userPrompt, maxTokens = 4000, options = {}) 
       if (!key) throw new Error('Mistral API key not configured.');
       modelUsed = await getSetting('mistral_model', null) || 'mistral-large-latest';
       result = await callMistral(key, systemPrompt, userPrompt, maxTokens, modelUsed);
+      break;
+    }
+    case 'deepseek': {
+      const key = await getSetting('deepseek_api_key', 'DEEPSEEK_API_KEY');
+      if (!key) throw new Error('DeepSeek API key not configured.');
+      modelUsed = await getSetting('deepseek_model', null) || 'deepseek-v4-flash';
+      result = await callDeepSeek(key, systemPrompt, userPrompt, maxTokens, modelUsed);
       break;
     }
     case 'anthropic':

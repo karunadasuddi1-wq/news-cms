@@ -13,6 +13,7 @@ const PROVIDERS = [
   { value: 'gemini', label: 'Google Gemini', models: ['gemini-3.5-flash', 'gemini-3.1-flash-lite'] },
   { value: 'groq', label: 'Groq (Llama)', models: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'] },
   { value: 'mistral', label: 'Mistral AI', models: ['mistral-large-latest'] },
+  { value: 'deepseek', label: 'DeepSeek', models: ['deepseek-v4-flash', 'deepseek-v4-pro'] },
 ];
 
 // Manually maintained model status notes. Add an entry here whenever a provider announces
@@ -69,6 +70,8 @@ export default function Settings() {
     groq_model: 'openai/gpt-oss-20b',
     mistral_api_key: '',
     mistral_model: 'mistral-large-latest',
+    deepseek_api_key: '',
+    deepseek_model: 'deepseek-v4-flash',
     wp_site_url: '',
     wp_username: '',
     wp_app_password: '',
@@ -92,6 +95,7 @@ export default function Settings() {
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
           groq_model: s.groq_model || 'openai/gpt-oss-20b',
           mistral_model: s.mistral_model || 'mistral-large-latest',
+          deepseek_model: s.deepseek_model || 'deepseek-v4-flash',
         }));
       })
       .catch(err => setError(apiErrorMessage(err)));
@@ -113,6 +117,7 @@ export default function Settings() {
         gemini_model: form.gemini_model,
         groq_model: form.groq_model,
         mistral_model: form.mistral_model,
+        deepseek_model: form.deepseek_model,
       };
       payload.wp_site_url = form.wp_site_url;
       payload.wp_username = form.wp_username;
@@ -123,6 +128,7 @@ export default function Settings() {
       if (form.gemini_api_key) payload.gemini_api_key = form.gemini_api_key;
       if (form.groq_api_key) payload.groq_api_key = form.groq_api_key;
       if (form.mistral_api_key) payload.mistral_api_key = form.mistral_api_key;
+      if (form.deepseek_api_key) payload.deepseek_api_key = form.deepseek_api_key;
 
       await client.put('/settings', payload);
       setSuccess('Settings saved successfully.');
