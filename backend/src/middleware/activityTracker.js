@@ -1,10 +1,10 @@
 const { UserActivity } = require('../models');
+const { getSetting } = require('../controllers/settingController');
 
-// If the gap since the user's last recorded request is under this threshold,
-// the gap is counted as active time. A longer gap is treated as "they stepped
-// away" and is not counted — this is what makes the total a genuine active-time
-// measure rather than just "time between first login and last click of the day."
-const IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+// Default if no Setting is configured yet — actual value is read from Settings
+// ("Idle threshold" under Activity Tracking) on every call, so an admin can
+// adjust it from the Settings page without a code change or redeploy.
+const DEFAULT_IDLE_THRESHOLD_MINUTES = 5;
 
 function todayDateOnly() {
   return new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
@@ -17,6 +17,12 @@ async function recordActivity(userId) {
     const now = new Date();
     const date = todayDateOnly();
 
+    const thresholdMinutes = parseInt(
+      (await getSetting('activity_idle_threshold_minutes', null)) || DEFAULT_IDLE_THRESHOLD_MINUTES,
+      10
+    ) || DEFAULT_IDLE_THRESHOLD_MINUTES;
+    const idleThresholdMs = thresholdMinutes * 60 * 1000;
+
     const row = await UserActivity.findOne({ where: { userId, date } });
 
     if (!row) {
@@ -25,7 +31,7 @@ async function recordActivity(userId) {
     }
 
     const gapMs = now.getTime() - new Date(row.lastSeenAt).getTime();
-    const addSeconds = gapMs > 0 && gapMs <= IDLE_THRESHOLD_MS ? Math.round(gapMs / 1000) : 0;
+    const addSeconds = gapMs > 0 && gapMs <= idleThresholdMs ? Math.round(gapMs / 1000) : 0;
 
     row.lastSeenAt = now;
     row.activeSeconds += addSeconds;

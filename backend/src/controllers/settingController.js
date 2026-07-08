@@ -30,6 +30,7 @@ const getSettings = asyncHandler(async (req, res) => {
     wp_configured: !!(map.wp_app_password || process.env.WP_APP_PASSWORD),
     site_logo_url: map.site_logo_url || '',
     wp_inject_schema: map.wp_inject_schema || 'false',
+    activity_idle_threshold_minutes: map.activity_idle_threshold_minutes || '5',
   };
   res.json({ settings: safeMap });
 });
@@ -48,6 +49,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'wp_site_url', 'wp_username', 'wp_app_password',
     'wp_category_map', 'wp_default_category_id',
     'site_logo_url', 'wp_inject_schema',
+    'activity_idle_threshold_minutes',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {

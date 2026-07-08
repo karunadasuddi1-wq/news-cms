@@ -77,6 +77,7 @@ export default function Settings() {
     wp_app_password: '',
     site_logo_url: '',
     wp_inject_schema: 'false',
+    activity_idle_threshold_minutes: '5',
   });
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export default function Settings() {
           wp_username: s.wp_username || '',
           site_logo_url: s.site_logo_url || '',
           wp_inject_schema: s.wp_inject_schema || 'false',
+          activity_idle_threshold_minutes: s.activity_idle_threshold_minutes || '5',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -128,6 +130,7 @@ export default function Settings() {
       if (form.wp_app_password) payload.wp_app_password = form.wp_app_password;
       payload.site_logo_url = form.site_logo_url;
       payload.wp_inject_schema = form.wp_inject_schema;
+      payload.activity_idle_threshold_minutes = form.activity_idle_threshold_minutes;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -321,6 +324,26 @@ export default function Settings() {
                 </span>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-paper-200 rounded-lg mb-6">
+          <div className="px-4 py-3 border-b border-paper-100">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">⏱ Activity Tracking</h2>
+          </div>
+          <div className="p-4">
+            <label className={labelCls}>Idle threshold (minutes)</label>
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={form.activity_idle_threshold_minutes}
+              onChange={e => setField('activity_idle_threshold_minutes', e.target.value)}
+              className={inputCls}
+            />
+            <p className="text-xs text-ink-400 mt-1">
+              Gaps between actions longer than this are not counted as active time on the Staff page's activity report — e.g. leaving a tab open during a long break.
+            </p>
           </div>
         </div>
 
