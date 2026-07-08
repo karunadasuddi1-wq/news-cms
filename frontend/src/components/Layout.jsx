@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import client from '../api/client';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: '◆', end: true },
@@ -18,7 +19,25 @@ const NAV_ITEMS = [
 export default function Layout({ children }) {
   const { user, logout, can } = useAuth();
   const [open, setOpen] = useState(false);
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const location = useLocation();
+
+  // Lightweight "who needs to look at this" signal: poll the pending-review
+  // count so editors/admins see it from anywhere in the app, not just when
+  // they happen to open the Dashboard. No email/push notifications — just
+  // a visible badge, refreshed periodically.
+  useEffect(() => {
+    if (!can.manageAny) return;
+    let cancelled = false;
+    const fetchCount = () => {
+      client.get('/dashboard/stats')
+        .then(r => { if (!cancelled) setPendingReviewCount(r.data.articles?.pendingReview || 0); })
+        .catch(() => {});
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000); // refresh every 60s
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [can.manageAny]);
 
   // Close drawer on route change
   useEffect(() => setOpen(false), [location.pathname]);
@@ -67,6 +86,11 @@ export default function Layout({ children }) {
           >
             <span className="text-base leading-none opacity-80">{item.icon}</span>
             {item.label}
+            {item.to === '/articles' && pendingReviewCount > 0 && (
+              <span className="ml-auto bg-amber-500 text-ink-900 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {pendingReviewCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
