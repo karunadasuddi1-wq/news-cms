@@ -5,7 +5,8 @@ async function generateArticleSchema(article) {
   const siteName = (await getSetting('site_name', null)) || '';
   const logoUrl = (await getSetting('site_logo_url', null)) || '';
 
-  const canonicalUrl = article.canonicalUrl || \`\${siteUrl.replace(/\\/\$/, '')}/article/\${article.slug}\`;
+  const trimmedSiteUrl = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
+  const canonicalUrl = article.canonicalUrl || (trimmedSiteUrl + '/article/' + article.slug);
 
   const schema = {
     '@context': 'https://schema.org',
