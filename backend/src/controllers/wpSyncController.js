@@ -239,9 +239,12 @@ async function syncToWordPress(article, categorySlug) {
   if (article.wpPostId) {
     console.log(`[wp-sync] Updating WP post ID: ${article.wpPostId}`);
     res = await wpRequest(`/posts/${article.wpPostId}`, { method: 'POST', body: payload });
-    if (res.status !== 200) {
-      console.warn(`[wp-sync] Update failed (${res.status}), creating new post...`);
+    if (res.status === 404) {
+      console.warn(`[wp-sync] WP post ${article.wpPostId} no longer exists (404) — creating a new post instead.`);
       res = await wpRequest('/posts', { method: 'POST', body: payload });
+    } else if (res.status !== 200) {
+      const errMsg = res.data?.message || JSON.stringify(res.data).slice(0, 300);
+      throw new Error(`Failed to update existing WordPress post (status ${res.status}): ${errMsg}. Not creating a duplicate post — please retry once the underlying issue is resolved.`);
     }
   } else {
     res = await wpRequest('/posts', { method: 'POST', body: payload });
