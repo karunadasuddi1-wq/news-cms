@@ -20,13 +20,29 @@ export default function Users() {
   const [saving, setSaving] = useState(false);
   const [activity, setActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [activityDateFilter, setActivityDateFilter] = useState('');
+  const [activityUserFilter, setActivityUserFilter] = useState('');
 
   useEffect(() => {
-    client.get('/users/activity?days=7')
+    const params = new URLSearchParams();
+    if (activityDateFilter) {
+      params.set('date', activityDateFilter);
+    } else {
+      params.set('days', '7');
+    }
+    if (activityUserFilter) params.set('userId', activityUserFilter);
+
+    setActivityLoading(true);
+    client.get('/users/activity?' + params.toString())
       .then((res) => setActivity(res.data.report))
       .catch(() => {})
       .finally(() => setActivityLoading(false));
-  }, []);
+  }, [activityDateFilter, activityUserFilter]);
+
+  function formatTime(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
   function load() {
     setLoading(true);
@@ -173,20 +189,58 @@ export default function Users() {
       )}
 
       <div className="mt-10">
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400 mb-3">
-          Last 7 Days — Active Time
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400">
+            Active Time {activityDateFilter ? '— ' + activityDateFilter : '— Last 7 Days'}
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={activityDateFilter}
+              onChange={(e) => setActivityDateFilter(e.target.value)}
+              className="border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
+            />
+            {activityDateFilter && (
+              <button
+                type="button"
+                onClick={() => setActivityDateFilter('')}
+                className="text-xs text-ink-400 hover:text-ink-700 underline"
+              >
+                Clear
+              </button>
+            )}
+            <select
+              value={activityUserFilter}
+              onChange={(e) => setActivityUserFilter(e.target.value)}
+              className="border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
+            >
+              <option value="">All staff</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         {activityLoading ? (
           <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-6 text-center">
             Loading…
           </p>
         ) : activity.length === 0 ? (
-          <p className="text-sm text-ink-400 py-4">No activity recorded yet.</p>
+          <p className="text-sm text-ink-400 py-4">No activity recorded for this filter.</p>
         ) : (
           <div className="bg-white border border-paper-200 rounded-lg divide-y divide-paper-100">
+            <div className="flex items-center justify-between px-5 py-2 text-[10px] font-mono uppercase tracking-widest text-ink-400">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <span className="w-24 shrink-0">Date</span>
+                <span className="flex-1">Staff</span>
+              </div>
+              <span className="w-16 text-right shrink-0">Login</span>
+              <span className="w-16 text-right shrink-0">Logout</span>
+              <span className="w-16 text-right shrink-0">Active</span>
+            </div>
             {activity.map((a) => (
-              <div key={`${a.userId}-${a.date}`} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                <div className="flex items-center gap-3 min-w-0">
+              <div key={a.userId + "-" + a.date} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <span className="font-mono text-xs text-ink-400 w-24 shrink-0">{a.date}</span>
                   <span className="font-medium text-ink-900 truncate">{a.name}</span>
                   <span
@@ -196,13 +250,15 @@ export default function Users() {
                     {a.role}
                   </span>
                 </div>
-                <span className="font-mono text-xs text-ink-700 shrink-0">{a.activeFormatted}</span>
+                <span className="font-mono text-xs text-ink-500 w-16 text-right shrink-0">{formatTime(a.firstSeenAt)}</span>
+                <span className="font-mono text-xs text-ink-500 w-16 text-right shrink-0">{formatTime(a.lastSeenAt)}</span>
+                <span className="font-mono text-xs text-ink-700 w-16 text-right shrink-0">{a.activeFormatted}</span>
               </div>
             ))}
           </div>
         )}
         <p className="text-xs text-ink-400 mt-2">
-          Active time is measured from real usage of the CMS, excluding gaps longer than 5 minutes — leaving a tab open doesn't count as active time.
+          Login/Logout reflect the first and last CMS activity seen that day (not a literal session token). Active time excludes gaps longer than 5 minutes — leaving a tab open doesn't count as active time.
         </p>
       </div>
 
