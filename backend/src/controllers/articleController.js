@@ -266,6 +266,39 @@ const setStatus = asyncHandler(async (req, res) => {
   res.json({ article: full });
 });
 
+// Re-pushes an already-published article to WordPress on demand — for when
+// edits were made via the regular Save button, which only updates the CMS's
+// own database and does NOT automatically push changes to WordPress. Only
+// a status transition to 'published' (see setStatus above) normally triggers
+// a sync; this endpoint lets an editor force one without unpublish/republish.
+const resync = asyncHandler(async (req, res) => {
+  const article = await Article.findByPk(req.params.id);
+  if (!article) return res.status(404).json({ error: 'Article not found.' });
+
+  if (!canManageAny(req.user)) {
+    return res.status(403).json({ error: 'Ask an editor to re-sync this article.' });
+  }
+
+  if (article.status !== 'published') {
+    return res.status(400).json({ error: 'Only published articles can be re-synced to WordPress.' });
+  }
+
+  try {
+    const { syncToWordPress } = require('./wpSyncController');
+    const { Category } = require('../models');
+    const cat = await Category.findByPk(article.categoryId);
+    const { wpPostId } = await syncToWordPress(article, cat ? cat.slug : null);
+    await Article.update({ wpPostId }, { where: { id: article.id } });
+    console.log('[wp-sync] Manually re-synced article', article.id, 'to WP post', wpPostId);
+  } catch (err) {
+    console.error('[wp-sync] Manual re-sync failed:', err.message);
+    return res.status(502).json({ error: `WordPress sync failed: ${err.message}` });
+  }
+
+  const full = await Article.findByPk(article.id, { include: AUTHOR_INCLUDE });
+  res.json({ article: full });
+});
+
 const remove = asyncHandler(async (req, res) => {
   const article = await Article.findByPk(req.params.id);
   if (!article) return res.status(404).json({ error: 'Article not found.' });
@@ -298,4 +331,4 @@ const remove = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
-module.exports = { list, getOne, create, update, setStatus, remove };
+module.exports = { list, getOne, create, update, setStatus, resync, remove };

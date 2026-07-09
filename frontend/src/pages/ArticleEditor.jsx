@@ -165,6 +165,8 @@ export default function ArticleEditor() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
+  const [resyncMessage, setResyncMessage] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
   const [generateSuccess, setGenerateSuccess] = useState(false);
@@ -323,6 +325,21 @@ export default function ArticleEditor() {
     const schedDate = new Date(form.scheduledAt);
     if (schedDate <= new Date()) { setError('Scheduled time must be in the future.'); return; }
     await transition('published', schedDate.toISOString());
+  }
+
+  async function handleResync() {
+    setError('');
+    setResyncing(true);
+    setResyncMessage('');
+    try {
+      const res = await client.post('/articles/' + id + '/resync');
+      setArticle(res.data.article);
+      setResyncMessage('Re-synced to WordPress successfully.');
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setResyncing(false);
+    }
   }
 
   if (loading) return <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-20 text-center">Loading…</p>;
@@ -619,6 +636,15 @@ export default function ArticleEditor() {
               {a.label}
             </button>
           ))}
+          {can.manageAny && isPublished && (
+            <button type="button" disabled={resyncing} onClick={handleResync}
+              className="text-sm font-medium px-5 py-2.5 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 transition-colors disabled:opacity-60">
+              {resyncing ? 'Re-syncing…' : '🔄 Re-sync to WordPress'}
+            </button>
+          )}
+          {resyncMessage && (
+            <span className="text-sm text-wire-teal-dark">{resyncMessage}</span>
+          )}
         </div>
       </form>
     </div>
