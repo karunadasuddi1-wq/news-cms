@@ -22,6 +22,21 @@ export default function Users() {
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityDateFilter, setActivityDateFilter] = useState('');
   const [activityUserFilter, setActivityUserFilter] = useState('');
+  const [syncingUserId, setSyncingUserId] = useState(null);
+  const [syncMessage, setSyncMessage] = useState({});
+
+  async function handleSyncAuthor(u) {
+    setSyncingUserId(u.id);
+    setSyncMessage((m) => ({ ...m, [u.id]: '' }));
+    try {
+      await client.post('/wp-sync/author/' + u.id);
+      setSyncMessage((m) => ({ ...m, [u.id]: '✓ Synced to WordPress' }));
+    } catch (err) {
+      setSyncMessage((m) => ({ ...m, [u.id]: apiErrorMessage(err) }));
+    } finally {
+      setSyncingUserId(null);
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -140,7 +155,8 @@ export default function Users() {
       ) : (
         <div className="bg-white border border-paper-200 rounded-lg divide-y divide-paper-100">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between px-5 py-3.5">
+            <div key={u.id} className="px-5 py-3.5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-paper-100 flex items-center justify-center font-display font-bold text-sm text-ink-700 shrink-0">
                   {u.name[0].toUpperCase()}
@@ -169,6 +185,16 @@ export default function Users() {
                 >
                   {u.isActive ? 'Deactivate' : 'Activate'}
                 </button>
+                {currentUser.role === 'admin' && (
+                  <button
+                    onClick={() => handleSyncAuthor(u)}
+                    disabled={syncingUserId === u.id}
+                    className="text-xs font-medium text-ink-600 hover:text-ink-900 disabled:opacity-30"
+                    title="Push this staff member's name/bio to their matching WordPress user profile, by email"
+                  >
+                    {syncingUserId === u.id ? 'Syncing…' : 'Sync to WP'}
+                  </button>
+                )}
                 <button
                   onClick={() => setEditing(u)}
                   className="text-xs font-medium text-ink-600 hover:text-ink-900"
@@ -183,6 +209,10 @@ export default function Users() {
                   Delete
                 </button>
               </div>
+            </div>
+              {syncMessage[u.id] && (
+                <p className="text-xs text-ink-400 mt-1">{syncMessage[u.id]}</p>
+              )}
             </div>
           ))}
         </div>
