@@ -116,6 +116,7 @@ async function sideloadImage(imageUrl, title, altText) {
         method: 'POST',
         headers: {
           'Authorization': wpAuthHeader(username, password),
+          'User-Agent': 'PublisherOS-CMS/1.0 (WordPress-Sync; +https://publisheros.in)',
           'Content-Disposition': `attachment; filename="${filename}"`,
           'Content-Type': contentType,
           'Content-Length': imageRes.buffer.length,
