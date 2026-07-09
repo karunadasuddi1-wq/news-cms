@@ -29,6 +29,9 @@ export default function Dashboard() {
   const { user, can } = useAuth();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
+  const [authorReport, setAuthorReport] = useState([]);
+  const [authorReportDays, setAuthorReportDays] = useState(48);
+  const [authorReportLoading, setAuthorReportLoading] = useState(true);
 
   useEffect(() => {
     client
@@ -36,6 +39,16 @@ export default function Dashboard() {
       .then((res) => setStats(res.data))
       .catch((err) => setError(apiErrorMessage(err)));
   }, []);
+
+  useEffect(() => {
+    if (!can.manageAny) return;
+    setAuthorReportLoading(true);
+    client
+      .get(`/dashboard/published-by-author?days=${authorReportDays}`)
+      .then((res) => setAuthorReport(res.data.report))
+      .catch(() => {})
+      .finally(() => setAuthorReportLoading(false));
+  }, [can.manageAny, authorReportDays]);
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-10">
@@ -93,6 +106,40 @@ export default function Dashboard() {
                 accent="var(--color-ink-900)"
                 to="/categories"
               />
+            </div>
+          )}
+
+          {can.manageAny && (
+            <div className="mb-10">
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400">
+                  Published — Last {authorReportDays} Days, by Author
+                </p>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={authorReportDays}
+                  onChange={(e) => setAuthorReportDays(parseInt(e.target.value, 10) || 48)}
+                  className="w-20 border border-paper-200 rounded px-2.5 py-1.5 text-xs bg-white"
+                />
+              </div>
+              {authorReportLoading ? (
+                <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-6 text-center">
+                  Loading…
+                </p>
+              ) : authorReport.length === 0 ? (
+                <p className="text-sm text-ink-400 py-4">No published articles in this range.</p>
+              ) : (
+                <div className="bg-white border border-paper-200 rounded-lg divide-y divide-paper-100">
+                  {authorReport.map((a) => (
+                    <div key={a.authorId} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                      <span className="font-medium text-ink-900">{a.name}</span>
+                      <span className="font-mono text-xs text-ink-700">{a.count} published</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>
