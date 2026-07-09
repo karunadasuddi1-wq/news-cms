@@ -3,6 +3,7 @@ const http = require('http');
 
 const { getSetting } = require('./settingController');
 const { generateArticleSchema } = require('../utils/schemaGenerator');
+const { User } = require('../models');
 
 async function getWpConfig() {
   const site_url = (await getSetting('wp_site_url', 'WP_SITE_URL')) || 'https://karunadasuddi.in';
@@ -175,6 +176,32 @@ async function mapCategory(categorySlug) {
   return wpId ? [wpId] : [defaultId];
 }
 
+// Looks up the WordPress user ID matching this article's CMS author, by email.
+// Fetches the author fresh by authorId rather than trusting article.author to
+// already be populated — syncToWordPress gets called from places (setStatus,
+// resync) that don't always include the author association.
+// Returns null if no author, no email, or no matching WordPress user is found —
+// callers should fall back gracefully (WordPress defaults to the authenticated
+// API user when no author is specified) and log a warning so a byline mismatch
+// like this is at least visible in the logs instead of silently wrong.
+async function getWpAuthorId(article) {
+  if (!article.authorId) return null;
+  try {
+    const cmsAuthor = await User.findByPk(article.authorId, { attributes: ['id', 'name', 'email'] });
+    if (!cmsAuthor || !cmsAuthor.email) return null;
+
+    const searchRes = await wpRequest(`/users?search=${encodeURIComponent(cmsAuthor.email)}&_fields=id,name,email`);
+    if (searchRes.status !== 200 || !Array.isArray(searchRes.data) || !searchRes.data.length) {
+      console.warn(`[wp-sync] No matching WordPress user found for CMS author "${cmsAuthor.name}" (${cmsAuthor.email}) — post will default to the API-authenticated WP user instead.`);
+      return null;
+    }
+    return searchRes.data[0].id;
+  } catch (err) {
+    console.warn('[wp-sync] Author lookup failed (non-fatal):', err.message);
+    return null;
+  }
+}
+
 async function syncToWordPress(article, categorySlug) {
   const { username, password } = await getWpConfig();
   if (!username || !password) {
@@ -185,6 +212,7 @@ async function syncToWordPress(article, categorySlug) {
 
   const featuredMediaId = await sideloadImage(article.featuredImage, article.title, article.imageAlt);
   const wpCategories = await mapCategory(categorySlug);
+  const wpAuthorId = await getWpAuthorId(article);
 
   const injectSchema = (await getSetting('wp_inject_schema', null)) === 'true';
   let contentWithSchema = article.content || '';
@@ -205,6 +233,7 @@ async function syncToWordPress(article, categorySlug) {
   };
 
   if (featuredMediaId) payload.featured_media = featuredMediaId;
+  if (wpAuthorId) payload.author = wpAuthorId;
 
   let res;
   if (article.wpPostId) {
