@@ -2,7 +2,7 @@ const { Op, fn, col, literal } = require('sequelize');
 const { Article, User, Category, sequelize } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { getSetting } = require('./settingController');
-const { fetchGA4ViewsBySlug } = require('../utils/ga4');
+const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle } = require('../utils/ga4');
 
 function canManageAny(user) {
   return user.role === 'admin' || user.role === 'editor';
@@ -182,7 +182,7 @@ const articles = asyncHandler(async (req, res) => {
       { model: User, as: 'author', attributes: ['id', 'name'] },
       { model: Category, as: 'category', attributes: ['id', 'name'] },
     ],
-    attributes: ['id', 'title', 'slug', 'views', 'publishedAt', 'createdAt', 'status'],
+    attributes: ['id', 'title', 'slug', 'views', 'directViews', 'dailyhuntViews', 'publishedAt', 'createdAt', 'status'],
     order: orderMap[sort] || orderMap.views,
     limit: pageSize,
     offset: (page - 1) * pageSize,
