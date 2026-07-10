@@ -33,6 +33,8 @@ const getSettings = asyncHandler(async (req, res) => {
     activity_idle_threshold_minutes: map.activity_idle_threshold_minutes || '5',
     content_language: map.content_language || 'kannada',
     guest_submission_token: map.guest_submission_token || '',
+    ga4_property_id: map.ga4_property_id || '',
+    ga4_configured: !!map.ga4_service_account_json,
   };
   res.json({ settings: safeMap });
 });
@@ -54,6 +56,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'activity_idle_threshold_minutes',
     'content_language',
     'guest_submission_token',
+    'ga4_property_id', 'ga4_service_account_json',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {

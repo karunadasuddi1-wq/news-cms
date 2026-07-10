@@ -82,6 +82,21 @@ export default function Analytics() {
   const [catStats, setCatStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ga4Syncing, setGa4Syncing] = useState(false);
+  const [ga4Message, setGa4Message] = useState('');
+
+  async function handleGa4Sync() {
+    setGa4Syncing(true);
+    setGa4Message('');
+    try {
+      const res = await client.post('/analytics/sync-ga4');
+      setGa4Message(res.data.message);
+    } catch (err) {
+      setGa4Message(apiErrorMessage(err));
+    } finally {
+      setGa4Syncing(false);
+    }
+  }
 
   const params = useCallback(() => {
     const p = preset === 'custom' ? { from, to } : { range: preset };
@@ -168,7 +183,22 @@ export default function Analytics() {
             {authors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         )}
+        {user?.role === 'admin' && (
+          <button
+            type="button"
+            onClick={handleGa4Sync}
+            disabled={ga4Syncing}
+            className="text-xs font-medium px-3 py-1.5 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 disabled:opacity-60 ml-2"
+            title="Pull real pageview counts from Google Analytics (requires setup in Settings)"
+          >
+            {ga4Syncing ? 'Syncing…' : '🔄 Sync views from Google Analytics'}
+          </button>
+        )}
       </div>
+
+      {ga4Message && (
+        <div className="text-xs text-ink-600 bg-paper-50 border border-paper-200 rounded px-3 py-2 mb-4">{ga4Message}</div>
+      )}
 
       {error && <div className="bg-red-50 text-red-700 text-sm px-4 py-2 rounded mb-4">{error}</div>}
       {loading && <div className="text-center py-12 text-ink-400 font-mono text-sm">Loading…</div>}

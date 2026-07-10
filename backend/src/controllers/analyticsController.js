@@ -1,6 +1,8 @@
 const { Op, fn, col, literal } = require('sequelize');
 const { Article, User, Category, sequelize } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { getSetting } = require('./settingController');
+const { fetchGA4ViewsBySlug } = require('../utils/ga4');
 
 function canManageAny(user) {
   return user.role === 'admin' || user.role === 'editor';
@@ -275,4 +277,47 @@ const categories = asyncHandler(async (req, res) => {
   res.json({ categories: stats });
 });
 
-module.exports = { overview, daily, articles, authors, categories };
+const syncGA4Views = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only an admin can sync Google Analytics data.' });
+  }
+
+  const propertyId = await getSetting('ga4_property_id', null);
+  const serviceAccountJson = await getSetting('ga4_service_account_json', null);
+
+  if (!propertyId || !serviceAccountJson) {
+    return res.status(400).json({ error: 'Google Analytics is not configured yet. Add the Property ID and service account JSON in Settings first.' });
+  }
+
+  const days = Math.min(parseInt(req.query.days, 10) || 365, 365);
+
+  let viewsBySlug;
+  try {
+    viewsBySlug = await fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+
+  const articles = await Article.findAll({ attributes: ['id', 'slug'] });
+  let matched = 0;
+  let totalViews = 0;
+
+  for (const article of articles) {
+    const views = viewsBySlug[article.slug];
+    if (views !== undefined) {
+      await Article.update({ views }, { where: { id: article.id } });
+      matched += 1;
+      totalViews += views;
+    }
+  }
+
+  res.json({
+    ok: true,
+    matched,
+    totalArticles: articles.length,
+    totalViews,
+    message: `Synced ${matched} of ${articles.length} articles with real Google Analytics view counts.`,
+  });
+});
+
+module.exports = { overview, daily, articles, authors, categories, syncGA4Views };

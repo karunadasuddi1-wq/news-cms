@@ -80,6 +80,8 @@ export default function Settings() {
     activity_idle_threshold_minutes: '5',
     content_language: 'kannada',
     guest_submission_token: '',
+    ga4_property_id: '',
+    ga4_service_account_json: '',
   });
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function Settings() {
           activity_idle_threshold_minutes: s.activity_idle_threshold_minutes || '5',
           content_language: s.content_language || 'kannada',
           guest_submission_token: s.guest_submission_token || '',
+          ga4_property_id: s.ga4_property_id || '',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -137,6 +140,8 @@ export default function Settings() {
       payload.activity_idle_threshold_minutes = form.activity_idle_threshold_minutes;
       payload.content_language = form.content_language;
       payload.guest_submission_token = form.guest_submission_token;
+      payload.ga4_property_id = form.ga4_property_id;
+      if (form.ga4_service_account_json) payload.ga4_service_account_json = form.ga4_service_account_json;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -151,7 +156,7 @@ export default function Settings() {
       const r = await client.get('/settings');
       setSettings(r.data.settings);
       // Clear key fields
-      setForm(f => ({ ...f, anthropic_api_key: '', openai_api_key: '', gemini_api_key: '', groq_api_key: '', mistral_api_key: '', wp_app_password: '' }));
+      setForm(f => ({ ...f, anthropic_api_key: '', openai_api_key: '', gemini_api_key: '', groq_api_key: '', mistral_api_key: '', wp_app_password: '', ga4_service_account_json: '' }));
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -428,6 +433,33 @@ export default function Settings() {
             <p className="text-xs text-ink-400 mt-2">
               Regenerating or revoking immediately invalidates the old link — remember to click Save Settings below for this to take effect.
             </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-paper-200 rounded-lg mb-6">
+          <div className="px-4 py-3 border-b border-paper-100 flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">📊 Google Analytics Integration</h2>
+            <StatusBadge configured={settings?.ga4_configured} />
+          </div>
+          <div className="p-4 space-y-4">
+            <p className="text-xs text-ink-400">
+              Pulls real pageview counts from GA4 into Analytics and Dashboard, replacing the internal counter (which only tracks traffic to PublisherOS's own public API, not WordPress readers). Requires a GA4 service account — see the onboarding runbook for the full setup steps.
+            </p>
+            <div>
+              <label className={labelCls}>GA4 Property ID</label>
+              <input className={inputCls} type="text" value={form.ga4_property_id}
+                onChange={e => setField('ga4_property_id', e.target.value)} placeholder="e.g. 123456789" />
+            </div>
+            <div>
+              <label className={labelCls}>Service Account JSON</label>
+              <textarea
+                className={inputCls + ' font-mono text-xs'}
+                rows={4}
+                value={form.ga4_service_account_json}
+                onChange={e => setField('ga4_service_account_json', e.target.value)}
+                placeholder={settings?.ga4_configured ? '•••••••• (leave blank to keep existing key)' : 'Paste the full contents of the downloaded .json key file here'}
+              />
+            </div>
           </div>
         </div>
 
