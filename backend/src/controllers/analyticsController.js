@@ -277,50 +277,9 @@ const categories = asyncHandler(async (req, res) => {
   res.json({ categories: stats });
 });
 
-const syncGA4Views = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only an admin can sync Google Analytics data.' });
-  }
-
-  const propertyId = await getSetting('ga4_property_id', null);
-  const serviceAccountJson = await getSetting('ga4_service_account_json', null);
-
-  if (!propertyId || !serviceAccountJson) {
-    return res.status(400).json({ error: 'Google Analytics is not configured yet. Add the Property ID and service account JSON in Settings first.' });
-  }
-
-  const days = Math.min(parseInt(req.query.days, 10) || 365, 365);
-
-  let viewsBySlug;
-  try {
-    viewsBySlug = await fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days);
-  } catch (err) {
-    return res.status(502).json({ error: err.message });
-  }
-
-  const articles = await Article.findAll({ attributes: ['id', 'slug'] });
-  let matched = 0;
-  let totalViews = 0;
-
-  for (const article of articles) {
-    const views = viewsBySlug[article.slug];
-    if (views !== undefined) {
-      await Article.update({ views }, { where: { id: article.id } });
-      matched += 1;
-      totalViews += views;
-    }
-  }
-
-  res.json({
-    ok: true,
-    matched,
-    totalArticles: articles.length,
-    totalViews,
-    message: `Synced ${matched} of ${articles.length} articles with real Google Analytics view counts.`,
-  });
-});
-const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle } = require('../utils/ga4');
-
+// POST /api/analytics/sync-ga4 — pulls real view counts from Google Analytics 4
+// and writes directViews (matched by slug/pagePath) and dailyhuntViews
+// (matched by title, filtered to DailyHunt referral sessions) separately.
 const syncGA4Views = asyncHandler(async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Only an admin can sync Google Analytics data.' });
