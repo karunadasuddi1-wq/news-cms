@@ -12,12 +12,13 @@ const PRESETS = [
   { label: 'Custom', value: 'custom' },
 ];
 
-function KpiCard({ label, value, sub, color }) {
+function KpiCard({ label, value, sub, color, breakdown }) {
   return (
     <div className="bg-white border border-paper-200 rounded-lg p-4">
       <p className="text-xs font-mono uppercase tracking-wide text-ink-500 mb-1">{label}</p>
       <p className="text-3xl font-display font-bold" style={{ color: color || '#16151a' }}>{value ?? '—'}</p>
-      {sub && <p className="text-xs text-ink-400 mt-1">{sub}</p>}
+      {breakdown && <p className="text-[11px] text-ink-400 font-mono mt-1">{breakdown}</p>}
+      {sub && !breakdown && <p className="text-xs text-ink-400 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -145,6 +146,8 @@ export default function Analytics() {
   const tabCls = t =>
     `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-press-red text-press-red' : 'border-transparent text-ink-500 hover:text-ink-900'}`;
 
+  const hasSplit = overview && ((overview.totalDirectViews || 0) > 0 || (overview.totalDailyhuntViews || 0) > 0);
+
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto">
       <div className="mb-6 pb-6 border-b-2 border-ink-900">
@@ -208,7 +211,13 @@ export default function Analytics() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
             <KpiCard label="Published" value={overview.totalPublished} sub="in range" />
-            <KpiCard label="Total Views" value={fmtViews(overview.totalViews)} sub="in range" color="#2e6f6b" />
+            <KpiCard
+              label="Total Views"
+              value={fmtViews(overview.totalViews)}
+              sub="in range"
+              color="#2e6f6b"
+              breakdown={hasSplit ? `D: ${fmtViews(overview.totalDirectViews)} · DH: ${fmtViews(overview.totalDailyhuntViews)}` : null}
+            />
             <KpiCard label="Avg Views" value={fmtViews(overview.avgViewsPerArticle)} sub="per article" />
             <KpiCard label="In Review" value={overview.totalPendingReview} sub="waiting" color="#c98a2c" />
             <KpiCard label="Drafts" value={overview.totalDraft} sub="in progress" />
@@ -290,6 +299,22 @@ export default function Analytics() {
                   </div>
                 ))}
                 {arts.length === 0 && <div className="text-center py-12 text-ink-400 text-sm">No articles in this range</div>}
+                {arts.length > 0 && (
+                  <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-paper-50 border-t-2 border-ink-900 items-center">
+                    <div className="col-span-8 text-xs font-mono uppercase tracking-wide text-ink-500 font-semibold">
+                      Total {hasSplit ? '(all matching articles, not just this page)' : ''}
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono font-bold text-sm" style={{ color: '#2e6f6b' }}>{fmtViews(overview.totalViews)}</div>
+                      {hasSplit && (
+                        <div className="text-[10px] text-ink-400 font-mono mt-0.5">
+                          D: {fmtViews(overview.totalDirectViews)} · DH: {fmtViews(overview.totalDailyhuntViews)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="col-span-2" />
+                  </div>
+                )}
               </div>
               {artPagination.totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-4">
