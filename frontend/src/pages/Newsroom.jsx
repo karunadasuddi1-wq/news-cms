@@ -131,7 +131,7 @@ export default function Newsroom() {
       case 'words_desc': list = [...list].sort((a, b) => b._score.wordCount - a._score.wordCount); break;
     }
     return list;
-  }, [scored, filter, sort, search]);
+  }, [scored, filter, sort, search, authorFilter]);
 
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
