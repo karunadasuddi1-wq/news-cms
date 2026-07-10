@@ -14,6 +14,7 @@ import Newsroom from './pages/Newsroom';
 import Settings from './pages/Settings';
 import UsageDashboard from './pages/UsageDashboard';
 import Layout from './components/Layout';
+import GuestSubmit from './pages/GuestSubmit';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/submit/:token" element={<GuestSubmit />} />
           <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/articles" element={<ProtectedRoute><Layout><Articles /></Layout></ProtectedRoute>} />
           <Route path="/articles/:id" element={<ProtectedRoute><Layout><ArticleEditor /></Layout></ProtectedRoute>} />

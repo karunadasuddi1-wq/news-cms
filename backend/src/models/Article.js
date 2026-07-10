@@ -45,6 +45,11 @@ Article.init(
       allowNull: true,
       field: 'kannada_keyword',
     },
+    guestSubmitterName: {
+      type: DataTypes.STRING(120),
+      allowNull: true,
+      field: 'guest_submitter_name',
+    },
     status: {
       type: DataTypes.ENUM(...STATUSES),
       allowNull: false,

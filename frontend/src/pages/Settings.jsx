@@ -79,6 +79,7 @@ export default function Settings() {
     wp_inject_schema: 'false',
     activity_idle_threshold_minutes: '5',
     content_language: 'kannada',
+    guest_submission_token: '',
   });
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function Settings() {
           wp_inject_schema: s.wp_inject_schema || 'false',
           activity_idle_threshold_minutes: s.activity_idle_threshold_minutes || '5',
           content_language: s.content_language || 'kannada',
+          guest_submission_token: s.guest_submission_token || '',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -134,6 +136,7 @@ export default function Settings() {
       payload.wp_inject_schema = form.wp_inject_schema;
       payload.activity_idle_threshold_minutes = form.activity_idle_threshold_minutes;
       payload.content_language = form.content_language;
+      payload.guest_submission_token = form.guest_submission_token;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
       if (form.openai_api_key) payload.openai_api_key = form.openai_api_key;
@@ -374,6 +377,56 @@ export default function Settings() {
             />
             <p className="text-xs text-ink-400 mt-1">
               Gaps between actions longer than this are not counted as active time on the Staff page's activity report — e.g. leaving a tab open during a long break.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-paper-200 rounded-lg mb-6">
+          <div className="px-4 py-3 border-b border-paper-100">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">🔗 Guest Submission Link</h2>
+          </div>
+          <div className="p-4">
+            <p className="text-xs text-ink-400 mb-3">
+              Share a link with outside contributors to let them submit an article without a CMS login. Submissions always land as a draft for an editor to review — never auto-published.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={form.guest_submission_token ? `${window.location.origin}/submit/${form.guest_submission_token}` : 'No link generated yet'}
+                className={inputCls + ' bg-ink-50 text-ink-500 font-mono text-xs'}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newToken = Array.from(crypto.getRandomValues(new Uint8Array(24)), b => b.toString(16).padStart(2, '0')).join('');
+                  setField('guest_submission_token', newToken);
+                }}
+                className="text-xs font-medium px-3 py-2.5 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 whitespace-nowrap"
+              >
+                {form.guest_submission_token ? 'Regenerate' : 'Generate Link'}
+              </button>
+              {form.guest_submission_token && (
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/submit/${form.guest_submission_token}`)}
+                  className="text-xs font-medium px-3 py-2.5 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 whitespace-nowrap"
+                >
+                  Copy
+                </button>
+              )}
+              {form.guest_submission_token && (
+                <button
+                  type="button"
+                  onClick={() => setField('guest_submission_token', '')}
+                  className="text-xs font-medium px-3 py-2.5 rounded border border-press-red/30 text-press-red hover:bg-press-red/5 whitespace-nowrap"
+                >
+                  Revoke
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-ink-400 mt-2">
+              Regenerating or revoking immediately invalidates the old link — remember to click Save Settings below for this to take effect.
             </p>
           </div>
         </div>
