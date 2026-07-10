@@ -319,5 +319,65 @@ const syncGA4Views = asyncHandler(async (req, res) => {
     message: `Synced ${matched} of ${articles.length} articles with real Google Analytics view counts.`,
   });
 });
+const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle } = require('../utils/ga4');
+
+const syncGA4Views = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only an admin can sync Google Analytics data.' });
+  }
+
+  const propertyId = await getSetting('ga4_property_id', null);
+  const serviceAccountJson = await getSetting('ga4_service_account_json', null);
+
+  if (!propertyId || !serviceAccountJson) {
+    return res.status(400).json({ error: 'Google Analytics is not configured yet. Add the Property ID and service account JSON in Settings first.' });
+  }
+
+  const days = Math.min(parseInt(req.query.days, 10) || 365, 365);
+
+  let viewsBySlug, viewsByTitle;
+  try {
+    [viewsBySlug, viewsByTitle] = await Promise.all([
+      fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days),
+      fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJson, days),
+    ]);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+
+  const articles = await Article.findAll({ attributes: ['id', 'slug', 'title'] });
+  let matched = 0;
+  let totalDirectViews = 0;
+  let totalDailyhuntViews = 0;
+
+  for (const article of articles) {
+    const directViews = viewsBySlug[article.slug] || 0;
+    const dailyhuntViews = viewsByTitle[article.title.trim()] || 0;
+
+    if (directViews || dailyhuntViews) {
+      await Article.update(
+        {
+          directViews,
+          dailyhuntViews,
+          views: directViews + dailyhuntViews,
+        },
+        { where: { id: article.id } }
+      );
+      matched += 1;
+      totalDirectViews += directViews;
+      totalDailyhuntViews += dailyhuntViews;
+    }
+  }
+
+  res.json({
+    ok: true,
+    matched,
+    totalArticles: articles.length,
+    totalDirectViews,
+    totalDailyhuntViews,
+    totalViews: totalDirectViews + totalDailyhuntViews,
+    message: `Synced ${matched} of ${articles.length} articles. Direct: ${totalDirectViews}, DailyHunt: ${totalDailyhuntViews}.`,
+  });
+});
 
 module.exports = { overview, daily, articles, authors, categories, syncGA4Views };
