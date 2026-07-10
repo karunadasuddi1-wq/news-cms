@@ -68,6 +68,8 @@ const overview = asyncHandler(async (req, res) => {
     totalDraft,
     totalPendingReview,
     totalViews,
+    totalDirectViews,
+    totalDailyhuntViews,
     allTimePublished,
     allTimeViews,
   ] = await Promise.all([
@@ -75,6 +77,8 @@ const overview = asyncHandler(async (req, res) => {
     Article.count({ where: { ...baseWhere, status: 'draft' } }),
     Article.count({ where: { ...baseWhere, status: 'pending_review' } }),
     Article.sum('views', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
+    Article.sum('directViews', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
+    Article.sum('dailyhuntViews', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
     Article.count({ where: { ...allTimeWhere, status: 'published' } }),
     Article.sum('views', { where: { ...allTimeWhere, status: 'published' } }),
   ]);
@@ -109,6 +113,8 @@ const overview = asyncHandler(async (req, res) => {
     totalDraft,
     totalPendingReview,
     totalViews: totalViews || 0,
+    totalDirectViews: totalDirectViews || 0,
+    totalDailyhuntViews: totalDailyhuntViews || 0,
     avgViewsPerArticle: totalPublished > 0 ? Math.round((totalViews || 0) / totalPublished) : 0,
     avgTimeToPublishHours: avgTimeToPublish,
     allTimePublished,
