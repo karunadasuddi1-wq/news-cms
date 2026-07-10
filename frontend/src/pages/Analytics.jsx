@@ -263,20 +263,27 @@ export default function Analytics() {
               </div>
               <div className="bg-white border border-paper-200 rounded-lg overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-paper-50 border-b border-paper-200 text-xs font-mono uppercase tracking-wide text-ink-500">
-                  <div className="col-span-5">Headline</div>
+                  <div className="col-span-4">Headline</div>
                   <div className="col-span-2">Author</div>
                   <div className="col-span-2">Category</div>
-                  <div className="col-span-1 text-right">Views</div>
+                  <div className="col-span-2 text-right">Views</div>
                   <div className="col-span-2 text-right">Published</div>
                 </div>
                 {arts.map(a => (
                   <div key={a.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-paper-50 last:border-0 hover:bg-paper-50 transition-colors text-sm items-center">
-                    <div className="col-span-5 min-w-0">
+                    <div className="col-span-4 min-w-0">
                       <Link to={`/articles/${a.id}`} className="font-medium text-ink-900 hover:text-press-red transition-colors line-clamp-1">{a.title}</Link>
                     </div>
                     <div className="col-span-2 text-ink-500 text-xs truncate">{a.author?.name || '—'}</div>
                     <div className="col-span-2 text-ink-500 text-xs truncate">{a.category?.name || '—'}</div>
-                    <div className="col-span-1 text-right"><span className="font-mono font-bold text-xs" style={{ color: '#2e6f6b' }}>{fmtViews(a.views || 0)}</span></div>
+                    <div className="col-span-2 text-right">
+                      <div className="font-mono font-bold text-xs" style={{ color: '#2e6f6b' }}>{fmtViews(a.views || 0)}</div>
+                      {(a.directViews > 0 || a.dailyhuntViews > 0) && (
+                        <div className="text-[10px] text-ink-400 font-mono mt-0.5">
+                          D: {fmtViews(a.directViews || 0)} · DH: {fmtViews(a.dailyhuntViews || 0)}
+                        </div>
+                      )}
+                    </div>
                     <div className="col-span-2 text-right text-xs text-ink-400 font-mono">
                       {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                     </div>
