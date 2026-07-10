@@ -13,20 +13,16 @@ async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, days = 365
   } catch (err) {
     throw new Error('Google service account JSON is not valid JSON — check what was pasted into Settings.');
   }
-
   if (!creds.client_email || !creds.private_key) {
     throw new Error('Service account JSON is missing client_email or private_key.');
   }
-
   const client = new JWT({
     email: creds.client_email,
     key: creds.private_key,
     scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
   });
-
   const endDate = new Date().toISOString().slice(0, 10);
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
   let res;
   try {
     res = await client.request({
@@ -43,28 +39,33 @@ async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, days = 365
     const detail = err.response?.data?.error?.message || err.message;
     throw new Error(`Google Analytics API request failed: ${detail}`);
   }
-
   const viewsBySlug = {};
   const rows = res.data?.rows || [];
-
   for (const row of rows) {
     const pagePath = row.dimensionValues?.[0]?.value || '';
     const views = parseInt(row.metricValues?.[0]?.value, 10) || 0;
-
     const slug = pagePath.split('?')[0].split('#')[0].replace(/^\/|\/$/g, '');
     if (!slug) continue;
-
     viewsBySlug[slug] = (viewsBySlug[slug] || 0) + views;
   }
-
   return viewsBySlug;
 }
+
+// Fetches pageview counts grouped by page title, filtered to sessions
+// referred from DailyHunt. Used as a fallback match for syndicated traffic
+// where DailyHunt serves content under its own internal path (e.g.
+// /KannadaDunia/home/kannada/n7190003517) rather than our real article slug,
+// so path-based matching in fetchGA4ViewsBySlug can't pick it up.
+// Returns a map of { normalizedTitle: viewCount }.
 async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, days = 365) {
   let creds;
   try {
     creds = JSON.parse(serviceAccountJsonRaw);
   } catch (err) {
     throw new Error('Google service account JSON is not valid JSON — check what was pasted into Settings.');
+  }
+  if (!creds.client_email || !creds.private_key) {
+    throw new Error('Service account JSON is missing client_email or private_key.');
   }
   const client = new JWT({
     email: creds.client_email,
@@ -101,6 +102,8 @@ async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, 
   const rows = res.data?.rows || [];
   for (const row of rows) {
     let title = row.dimensionValues?.[0]?.value || '';
+    // Strip known site-name suffixes GA4 appends via the page <title> tag,
+    // since DailyHunt's instant-article reader doesn't include them.
     title = title.replace(/\s*-\s*KannadaDunia\.com\s*$/i, '').trim();
     const views = parseInt(row.metricValues?.[0]?.value, 10) || 0;
     if (!title) continue;
@@ -110,5 +113,3 @@ async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, 
 }
 
 module.exports = { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle };
-
-module.exports = { fetchGA4ViewsBySlug };
