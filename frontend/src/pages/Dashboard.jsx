@@ -91,6 +91,10 @@ export default function Dashboard() {
   const [authorReportLoading, setAuthorReportLoading] = useState(true);
   const [recent, setRecent] = useState([]);
   const [aiUsage, setAiUsage] = useState(null);
+  const [topArticles, setTopArticles] = useState(null);
+  const [topArticlesRange, setTopArticlesRange] = useState('today');
+  const [topArticlesLoading, setTopArticlesLoading] = useState(false);
+  const [topArticlesError, setTopArticlesError] = useState('');
   const [greeting, setGreeting] = useState('Hello');
 
   useEffect(() => {
@@ -124,6 +128,26 @@ export default function Dashboard() {
       .then((res) => setAiUsage(res.data))
       .catch(() => {});
   }, [can.manageAny, authorReportDays]);
+
+  useEffect(() => {
+    if (!can.manageAny) return;
+    setTopArticlesLoading(true);
+    setTopArticlesError('');
+
+    const today = new Date();
+    const endDate = today.toISOString().slice(0, 10);
+    let startDate = endDate;
+    if (topArticlesRange === '7d') {
+      startDate = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    } else if (topArticlesRange === '30d') {
+      startDate = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    }
+
+    client.get(`/analytics/top-articles?startDate=${startDate}&endDate=${endDate}&limit=10`)
+      .then((res) => setTopArticles(res.data.articles))
+      .catch((err) => setTopArticlesError(apiErrorMessage(err)))
+      .finally(() => setTopArticlesLoading(false));
+  }, [can.manageAny, topArticlesRange]);
 
   const firstName = user?.name?.split(' ')[0];
   const usagePct = aiUsage ? Math.min(100, Math.round((aiUsage.requests / aiUsage.dailyLimit) * 100)) : 0;
@@ -276,6 +300,66 @@ export default function Dashboard() {
                         {a.count} <span className="font-sans font-normal text-xs text-ink-400">pub.</span>
                       </span>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {can.manageAny && (
+            <div className="mb-10">
+              <SectionEyebrow
+                right={
+                  <div className="flex gap-1">
+                    {[
+                      { value: 'today', label: 'Today' },
+                      { value: '7d', label: '7 Days' },
+                      { value: '30d', label: '30 Days' },
+                    ].map((r) => (
+                      <button
+                        key={r.value}
+                        onClick={() => setTopArticlesRange(r.value)}
+                        className={`text-[11px] font-mono uppercase px-2.5 py-1 rounded transition-colors ${
+                          topArticlesRange === r.value
+                            ? 'bg-ink-900 text-paper-50'
+                            : 'border border-paper-200 text-ink-600 hover:border-ink-600'
+                        }`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                }
+              >
+                Top 10 by Views
+              </SectionEyebrow>
+              {topArticlesError ? (
+                <p className="text-sm text-press-red py-4">{topArticlesError}</p>
+              ) : topArticlesLoading ? (
+                <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-6 text-center">
+                  Loading…
+                </p>
+              ) : !topArticles || topArticles.length === 0 ? (
+                <p className="text-sm text-ink-400 py-4">No views recorded in this range.</p>
+              ) : (
+                <div className="bg-white border border-paper-200 rounded-lg divide-y divide-paper-100">
+                  {topArticles.map((a, i) => (
+                    <Link
+                      key={a.id}
+                      to={`/articles/${a.id}`}
+                      className="flex items-center gap-4 px-5 py-3 text-sm hover:bg-paper-50 transition-colors"
+                    >
+                      <span className="font-display font-bold text-lg text-ink-400 w-7 text-right shrink-0">
+                        {i + 1}
+                      </span>
+                      <span className="text-ink-900 flex-1 truncate">{a.title}</span>
+                      <span className="font-mono text-[11px] text-ink-400 shrink-0" title="Direct + DailyHunt">
+                        {a.directViews} + {a.dailyhuntViews}
+                      </span>
+                      <span className="font-display font-bold text-base text-press-red w-16 text-right shrink-0">
+                        {a.totalViews}
+                      </span>
+                    </Link>
                   ))}
                 </div>
               )}

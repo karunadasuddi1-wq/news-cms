@@ -303,8 +303,8 @@ const syncGA4Views = asyncHandler(async (req, res) => {
   let viewsBySlug, viewsByTitle;
   try {
     [viewsBySlug, viewsByTitle] = await Promise.all([
-      fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days),
-      fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJson, days),
+      fetchGA4ViewsBySlug(propertyId, serviceAccountJson, { days }),
+      fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJson, { days }),
     ]);
   } catch (err) {
     return res.status(502).json({ error: err.message });
@@ -345,4 +345,54 @@ const syncGA4Views = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { overview, daily, articles, authors, categories, syncGA4Views };
+const topArticlesByViews = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'editor') {
+    return res.status(403).json({ error: 'Ask an editor for this report.' });
+  }
+
+  const propertyId = await getSetting('ga4_property_id', null);
+  const serviceAccountJson = await getSetting('ga4_service_account_json', null);
+
+  if (!propertyId || !serviceAccountJson) {
+    return res.status(400).json({ error: 'Google Analytics is not configured yet. Add the Property ID and service account JSON in Settings first.' });
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const startDate = req.query.startDate || today;
+  const endDate = req.query.endDate || today;
+  const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
+
+  let viewsBySlug, viewsByTitle;
+  try {
+    [viewsBySlug, viewsByTitle] = await Promise.all([
+      fetchGA4ViewsBySlug(propertyId, serviceAccountJson, { startDate, endDate }),
+      fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJson, { startDate, endDate }),
+    ]);
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+
+  const dbArticles = await Article.findAll({ attributes: ['id', 'title', 'slug', 'status'] });
+
+  const ranked = dbArticles
+    .map((article) => {
+      const directViews = viewsBySlug[article.slug] || 0;
+      const dailyhuntViews = viewsByTitle[article.title.trim()] || 0;
+      return {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        status: article.status,
+        directViews,
+        dailyhuntViews,
+        totalViews: directViews + dailyhuntViews,
+      };
+    })
+    .filter((a) => a.totalViews > 0)
+    .sort((a, b) => b.totalViews - a.totalViews)
+    .slice(0, limit);
+
+  res.json({ articles: ranked, startDate, endDate });
+});
+
+module.exports = { overview, daily, articles, authors, categories, syncGA4Views, topArticlesByViews };

@@ -1,6 +1,14 @@
 const { JWT } = require('google-auth-library');
 
-async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, days = 365) {
+function resolveDateRange({ days, startDate, endDate } = {}) {
+  if (startDate && endDate) return { startDate, endDate };
+  const resolvedDays = days || 365;
+  const end = new Date().toISOString().slice(0, 10);
+  const start = new Date(Date.now() - resolvedDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return { startDate: start, endDate: end };
+}
+
+function buildClient(serviceAccountJsonRaw) {
   let creds;
   try {
     creds = JSON.parse(serviceAccountJsonRaw);
@@ -10,13 +18,17 @@ async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, days = 365
   if (!creds.client_email || !creds.private_key) {
     throw new Error('Service account JSON is missing client_email or private_key.');
   }
-  const client = new JWT({
+  return new JWT({
     email: creds.client_email,
     key: creds.private_key,
     scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
   });
-  const endDate = new Date().toISOString().slice(0, 10);
-  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, dateOptions = {}) {
+  const client = buildClient(serviceAccountJsonRaw);
+  const { startDate, endDate } = resolveDateRange(dateOptions);
+
   let res;
   try {
     res = await client.request({
@@ -45,36 +57,9 @@ async function fetchGA4ViewsBySlug(propertyId, serviceAccountJsonRaw, days = 365
   return viewsBySlug;
 }
 
-// Fetches pageview counts grouped by page title, for pageviews whose path
-// starts with DailyHunt's own internal reader path prefix (e.g.
-// /KannadaDunia/home/kannada/n7190003517) rather than our real article slug.
-//
-// This does NOT filter by referral source — DailyHunt's in-app reader/WebView
-// typically shows up in GA4 as (direct) traffic with no referrer at all, so a
-// sessionSourceMedium filter matches nothing. The reliable signal is the
-// distinctive path prefix DailyHunt's own reader uses, confirmed directly
-// against real GA4 data.
-//
-// `pathPrefix` should match what you see in your own GA4 report — check a
-// known-syndicated article's path there and adjust if it differs from the
-// default below.
-async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, days = 365, pathPrefix = '/KannadaDunia/home/kannada/') {
-  let creds;
-  try {
-    creds = JSON.parse(serviceAccountJsonRaw);
-  } catch (err) {
-    throw new Error('Google service account JSON is not valid JSON — check what was pasted into Settings.');
-  }
-  if (!creds.client_email || !creds.private_key) {
-    throw new Error('Service account JSON is missing client_email or private_key.');
-  }
-  const client = new JWT({
-    email: creds.client_email,
-    key: creds.private_key,
-    scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
-  });
-  const endDate = new Date().toISOString().slice(0, 10);
-  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, dateOptions = {}, pathPrefix = '/KannadaDunia/home/kannada/') {
+  const client = buildClient(serviceAccountJsonRaw);
+  const { startDate, endDate } = resolveDateRange(dateOptions);
 
   let res;
   try {
@@ -111,4 +96,4 @@ async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, 
   return viewsByTitle;
 }
 
-module.exports = { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle };
+module.exports = { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle, resolveDateRange };
