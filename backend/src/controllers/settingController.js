@@ -34,6 +34,7 @@ const getSettings = asyncHandler(async (req, res) => {
     content_language: map.content_language || 'kannada',
     guest_submission_token: map.guest_submission_token || '',
     ga4_property_id: map.ga4_property_id || '',
+    ai_daily_request_limit: map.ai_daily_request_limit || '500',
     ga4_configured: !!map.ga4_service_account_json,
   };
   res.json({ settings: safeMap });
@@ -57,6 +58,7 @@ const updateSettings = asyncHandler(async (req, res) => {
     'content_language',
     'guest_submission_token',
     'ga4_property_id', 'ga4_service_account_json',
+    'ai_daily_request_limit',
   ];
 
   for (const [key, value] of Object.entries(req.body)) {

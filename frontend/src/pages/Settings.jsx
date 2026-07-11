@@ -82,6 +82,7 @@ export default function Settings() {
     guest_submission_token: '',
     ga4_property_id: '',
     ga4_service_account_json: '',
+    ai_daily_request_limit: '500',
   });
 
   useEffect(() => {
@@ -103,6 +104,7 @@ export default function Settings() {
           content_language: s.content_language || 'kannada',
           guest_submission_token: s.guest_submission_token || '',
           ga4_property_id: s.ga4_property_id || '',
+          ai_daily_request_limit: s.ai_daily_request_limit || '500',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
           openai_model: s.openai_model || 'gpt-5.5',
           gemini_model: s.gemini_model || 'gemini-3.5-flash',
@@ -141,6 +143,7 @@ export default function Settings() {
       payload.content_language = form.content_language;
       payload.guest_submission_token = form.guest_submission_token;
       payload.ga4_property_id = form.ga4_property_id;
+      payload.ai_daily_request_limit = form.ai_daily_request_limit;
       if (form.ga4_service_account_json) payload.ga4_service_account_json = form.ga4_service_account_json;
       // Only send API keys if they were filled in
       if (form.anthropic_api_key) payload.anthropic_api_key = form.anthropic_api_key;
@@ -460,6 +463,25 @@ export default function Settings() {
                 placeholder={settings?.ga4_configured ? '•••••••• (leave blank to keep existing key)' : 'Paste the full contents of the downloaded .json key file here'}
               />
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-paper-200 rounded-lg mb-6">
+          <div className="px-4 py-3 border-b border-paper-100">
+            <h2 className="text-xs font-mono uppercase tracking-wide text-ink-600 font-bold">🤖 AI Daily Budget</h2>
+          </div>
+          <div className="p-4">
+            <label className={labelCls}>Daily AI request limit</label>
+            <input
+              type="number"
+              min="1"
+              value={form.ai_daily_request_limit}
+              onChange={e => setField('ai_daily_request_limit', e.target.value)}
+              className={inputCls}
+            />
+            <p className="text-xs text-ink-400 mt-1">
+              Shown as a progress bar on the Dashboard's "AI Usage Today" widget — informational only, doesn't actually block requests once reached.
+            </p>
           </div>
         </div>
 

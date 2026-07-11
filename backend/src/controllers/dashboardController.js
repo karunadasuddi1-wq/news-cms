@@ -1,6 +1,12 @@
 const { Op } = require('sequelize');
-const { Article, User, Category, sequelize } = require('../models');
+const { Article, User, Category, AiUsageLog, sequelize } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { getSetting } = require('./settingController');
+
+function pctChange(current, previous) {
+  if (previous === 0) return null;
+  return Math.round(((current - previous) / previous) * 100);
+}
 
 const stats = asyncHandler(async (req, res) => {
   const canManageAny = req.user.role === 'admin' || req.user.role === 'editor';
@@ -23,11 +29,65 @@ const stats = asyncHandler(async (req, res) => {
     payload.categories = categoryCount;
   }
 
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  const [createdThisWeek, createdLastWeek, publishedThisWeek, publishedLastWeek] = await Promise.all([
+    Article.count({ where: { ...baseWhere, createdAt: { [Op.gte]: weekAgo } } }),
+    Article.count({ where: { ...baseWhere, createdAt: { [Op.gte]: twoWeeksAgo, [Op.lt]: weekAgo } } }),
+    Article.count({ where: { ...baseWhere, status: 'published', publishedAt: { [Op.gte]: weekAgo } } }),
+    Article.count({ where: { ...baseWhere, status: 'published', publishedAt: { [Op.gte]: twoWeeksAgo, [Op.lt]: weekAgo } } }),
+  ]);
+
+  payload.trends = {
+    total: pctChange(createdThisWeek, createdLastWeek),
+    published: pctChange(publishedThisWeek, publishedLastWeek),
+  };
+
   res.json(payload);
 });
 
-// Admin/editor only: published article count per author over a day range
-// (default 48 days, capped at 365). Ordered by most published first.
+const recentArticles = asyncHandler(async (req, res) => {
+  const canManageAny = req.user.role === 'admin' || req.user.role === 'editor';
+  const baseWhere = canManageAny ? {} : { authorId: req.user.id };
+  const limit = Math.min(parseInt(req.query.limit, 10) || 5, 20);
+
+  const articles = await Article.findAll({
+    where: baseWhere,
+    include: [{ model: User, as: 'author', attributes: ['id', 'name'] }],
+    order: [['updatedAt', 'DESC']],
+    limit,
+    attributes: ['id', 'title', 'slug', 'status', 'updatedAt'],
+  });
+
+  res.json({ articles });
+});
+
+const aiUsageToday = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'editor') {
+    return res.status(403).json({ error: 'Ask an editor for this data.' });
+  }
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const logs = await AiUsageLog.findAll({
+    where: { createdAt: { [Op.gte]: startOfToday } },
+    attributes: ['inputTokens', 'outputTokens', 'costUsd'],
+    raw: true,
+  });
+
+  const requests = logs.length;
+  const tokens = logs.reduce((sum, l) => sum + (l.inputTokens || 0) + (l.outputTokens || 0), 0);
+  const costUsd = logs.reduce((sum, l) => sum + parseFloat(l.costUsd || 0), 0);
+  const costInr = costUsd * 83.5;
+
+  const dailyLimit = parseInt((await getSetting('ai_daily_request_limit', null)) || '500', 10);
+
+  res.json({ requests, tokens, costInr: Math.round(costInr * 100) / 100, dailyLimit });
+});
+
 const publishedByAuthor = asyncHandler(async (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'editor') {
     return res.status(403).json({ error: 'Ask an editor for this report.' });
@@ -63,4 +123,4 @@ const publishedByAuthor = asyncHandler(async (req, res) => {
   res.json({ report, days });
 });
 
-module.exports = { stats, publishedByAuthor };
+module.exports = { stats, publishedByAuthor, recentArticles, aiUsageToday };
