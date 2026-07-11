@@ -326,7 +326,7 @@ const syncGA4Views = asyncHandler(async (req, res) => {
           dailyhuntViews,
           views: directViews + dailyhuntViews,
         },
-        { where: { id: article.id } }
+        { where: { id: article.id }, silent: true }
       );
       matched += 1;
       totalDirectViews += directViews;
