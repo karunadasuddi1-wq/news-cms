@@ -194,7 +194,7 @@ export default function Articles() {
                   Section
                 </th>
                 <th className="px-5 py-3 font-mono text-[11px] uppercase tracking-wide text-ink-400 font-medium">
-                  Updated
+                  Date
                 </th>
                 <th className="px-5 py-3 font-mono text-[11px] uppercase tracking-wide text-ink-400 font-medium">
                   Status
@@ -216,7 +216,7 @@ export default function Articles() {
                   <td className="px-5 py-3.5 text-ink-600">{a.author?.name}</td>
                   <td className="px-5 py-3.5 text-ink-600">{a.category?.name}</td>
                   <td className="px-5 py-3.5 text-ink-600 font-mono text-xs">
-                    {formatDate(a.updatedAt)}
+                    {formatDate(a.status === 'published' ? a.publishedAt : a.updatedAt)}
                   </td>
                   <td className="px-5 py-3.5">
                     <StatusStamp status={a.status} />
