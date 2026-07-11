@@ -81,12 +81,25 @@ const list = asyncHandler(async (req, res) => {
   if (search) where.title = { [Op.like]: `%${search}%` };
 
   if (dateFrom || dateTo) {
-    where.updatedAt = {};
-    if (dateFrom) where.updatedAt[Op.gte] = new Date(dateFrom);
+    const dateCondition = {};
+    if (dateFrom) dateCondition[Op.gte] = new Date(dateFrom);
     if (dateTo) {
       const end = new Date(dateTo);
       end.setHours(23, 59, 59, 999);
-      where.updatedAt[Op.lte] = end;
+      dateCondition[Op.lte] = end;
+    }
+
+    if (status === 'published') {
+      where.publishedAt = dateCondition;
+    } else if (status) {
+      where.updatedAt = dateCondition;
+    } else {
+      where[Op.and] = (where[Op.and] || []).concat([{
+        [Op.or]: [
+          { status: 'published', publishedAt: dateCondition },
+          { status: { [Op.ne]: 'published' }, updatedAt: dateCondition },
+        ],
+      }]);
     }
   }
 
