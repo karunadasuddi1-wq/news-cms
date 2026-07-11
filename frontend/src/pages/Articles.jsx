@@ -21,22 +21,44 @@ export default function Articles() {
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
   const status = params.get('status') || '';
+  const dateFrom = params.get('dateFrom') || '';
+  const dateTo = params.get('dateTo') || '';
+  const authorId = params.get('authorId') || '';
 
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [authors, setAuthors] = useState([]);
+
+  useEffect(() => {
+    if (can.manageAny) {
+      client.get('/users').then((res) => setAuthors(res.data.users)).catch(() => {});
+    }
+  }, [can.manageAny]);
 
   const load = useCallback(() => {
     setLoading(true);
+    const query = {};
+    if (status) query.status = status;
+    if (dateFrom) query.dateFrom = dateFrom;
+    if (dateTo) query.dateTo = dateTo;
+    if (authorId) query.authorId = authorId;
     client
-      .get('/articles', { params: status ? { status } : {} })
+      .get('/articles', { params: query })
       .then((res) => setArticles(res.data.articles))
       .catch((err) => setError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [status]);
+  }, [status, dateFrom, dateTo, authorId]);
 
   useEffect(load, [load]);
+
+  function updateParam(key, value) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next);
+  }
 
   async function transition(article, nextStatus) {
     setBusyId(article.id);
@@ -84,11 +106,11 @@ export default function Articles() {
 
       <ErrorBanner message={error} />
 
-      <div className="flex gap-1.5 mb-5">
+      <div className="flex gap-1.5 mb-5 flex-wrap items-center">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
-            onClick={() => setParams(f.value ? { status: f.value } : {})}
+            onClick={() => updateParam('status', f.value)}
             className={`text-xs font-mono uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors ${
               status === f.value
                 ? 'bg-ink-900 text-paper-50 border-ink-900'
@@ -98,6 +120,52 @@ export default function Articles() {
             {f.label}
           </button>
         ))}
+
+        <div className="h-5 w-px bg-paper-200 mx-1" />
+
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => updateParam('dateFrom', e.target.value)}
+          className="text-xs border border-paper-200 rounded px-2 py-1.5 bg-white"
+          title="From date"
+        />
+        <span className="text-xs text-ink-400">to</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => updateParam('dateTo', e.target.value)}
+          className="text-xs border border-paper-200 rounded px-2 py-1.5 bg-white"
+          title="To date"
+        />
+
+        {can.manageAny && (
+          <select
+            value={authorId}
+            onChange={(e) => updateParam('authorId', e.target.value)}
+            className="text-xs border border-paper-200 rounded px-2 py-1.5 bg-white"
+          >
+            <option value="">All authors</option>
+            {authors.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        )}
+
+        {(dateFrom || dateTo || authorId) && (
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(params);
+              next.delete('dateFrom');
+              next.delete('dateTo');
+              next.delete('authorId');
+              setParams(next);
+            }}
+            className="text-xs text-ink-400 hover:text-press-red underline ml-1"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -188,6 +256,12 @@ function ArticleActions({ article, canManageAny, busy, onTransition, onDelete })
 
   return (
     <div className="inline-flex items-center gap-2">
+      <Link
+        to={`/articles/${article.id}`}
+        className="text-xs font-medium px-2.5 py-1 rounded text-ink-600 hover:text-ink-900 border border-paper-200 hover:border-ink-600 transition-colors"
+      >
+        Edit
+      </Link>
       {actions.map((a) => (
         <button
           key={a.next}

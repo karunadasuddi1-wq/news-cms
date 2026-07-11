@@ -66,7 +66,7 @@ async function resolveSlug(customSlug, fallbackText, excludeId = null) {
 }
 
 const list = asyncHandler(async (req, res) => {
-  const { status, categoryId, authorId, search } = req.query;
+  const { status, categoryId, authorId, search, dateFrom, dateTo } = req.query;
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 20, 1), 100);
 
@@ -79,6 +79,16 @@ const list = asyncHandler(async (req, res) => {
   if (status) where.status = status;
   if (categoryId) where.categoryId = categoryId;
   if (search) where.title = { [Op.like]: `%${search}%` };
+
+  if (dateFrom || dateTo) {
+    where.updatedAt = {};
+    if (dateFrom) where.updatedAt[Op.gte] = new Date(dateFrom);
+    if (dateTo) {
+      const end = new Date(dateTo);
+      end.setHours(23, 59, 59, 999);
+      where.updatedAt[Op.lte] = end;
+    }
+  }
 
   const { rows, count } = await Article.findAndCountAll({
     where,
