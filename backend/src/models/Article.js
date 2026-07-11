@@ -96,6 +96,18 @@ Article.init(
       allowNull: false,
       defaultValue: 0,
     },
+    directViews: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      field: 'direct_views',
+    },
+    dailyhuntViews: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      field: 'dailyhunt_views',
+    },
     tags: {
       type: DataTypes.TEXT,
       allowNull: true,

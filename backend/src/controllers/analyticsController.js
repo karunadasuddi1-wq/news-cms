@@ -2,7 +2,7 @@ const { Op, fn, col, literal } = require('sequelize');
 const { Article, User, Category, sequelize } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { getSetting } = require('./settingController');
-const { fetchGA4ViewsBySlug } = require('../utils/ga4');
+const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle } = require('../utils/ga4');
 
 function canManageAny(user) {
   return user.role === 'admin' || user.role === 'editor';
@@ -68,6 +68,8 @@ const overview = asyncHandler(async (req, res) => {
     totalDraft,
     totalPendingReview,
     totalViews,
+    totalDirectViews,
+    totalDailyhuntViews,
     allTimePublished,
     allTimeViews,
   ] = await Promise.all([
@@ -75,6 +77,8 @@ const overview = asyncHandler(async (req, res) => {
     Article.count({ where: { ...baseWhere, status: 'draft' } }),
     Article.count({ where: { ...baseWhere, status: 'pending_review' } }),
     Article.sum('views', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
+    Article.sum('directViews', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
+    Article.sum('dailyhuntViews', { where: { ...baseWhere, ...dateWhere, status: 'published' } }),
     Article.count({ where: { ...allTimeWhere, status: 'published' } }),
     Article.sum('views', { where: { ...allTimeWhere, status: 'published' } }),
   ]);
@@ -109,6 +113,8 @@ const overview = asyncHandler(async (req, res) => {
     totalDraft,
     totalPendingReview,
     totalViews: totalViews || 0,
+    totalDirectViews: totalDirectViews || 0,
+    totalDailyhuntViews: totalDailyhuntViews || 0,
     avgViewsPerArticle: totalPublished > 0 ? Math.round((totalViews || 0) / totalPublished) : 0,
     avgTimeToPublishHours: avgTimeToPublish,
     allTimePublished,
@@ -182,7 +188,7 @@ const articles = asyncHandler(async (req, res) => {
       { model: User, as: 'author', attributes: ['id', 'name'] },
       { model: Category, as: 'category', attributes: ['id', 'name'] },
     ],
-    attributes: ['id', 'title', 'slug', 'views', 'publishedAt', 'createdAt', 'status'],
+    attributes: ['id', 'title', 'slug', 'views', 'directViews', 'dailyhuntViews', 'publishedAt', 'createdAt', 'status'],
     order: orderMap[sort] || orderMap.views,
     limit: pageSize,
     offset: (page - 1) * pageSize,
@@ -277,6 +283,9 @@ const categories = asyncHandler(async (req, res) => {
   res.json({ categories: stats });
 });
 
+// POST /api/analytics/sync-ga4 — pulls real view counts from Google Analytics 4
+// and writes directViews (matched by slug/pagePath) and dailyhuntViews
+// (matched by title, filtered to DailyHunt referral sessions) separately.
 const syncGA4Views = asyncHandler(async (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Only an admin can sync Google Analytics data.' });
@@ -291,23 +300,37 @@ const syncGA4Views = asyncHandler(async (req, res) => {
 
   const days = Math.min(parseInt(req.query.days, 10) || 365, 365);
 
-  let viewsBySlug;
+  let viewsBySlug, viewsByTitle;
   try {
-    viewsBySlug = await fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days);
+    [viewsBySlug, viewsByTitle] = await Promise.all([
+      fetchGA4ViewsBySlug(propertyId, serviceAccountJson, days),
+      fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJson, days),
+    ]);
   } catch (err) {
     return res.status(502).json({ error: err.message });
   }
 
-  const articles = await Article.findAll({ attributes: ['id', 'slug'] });
+  const articles = await Article.findAll({ attributes: ['id', 'slug', 'title'] });
   let matched = 0;
-  let totalViews = 0;
+  let totalDirectViews = 0;
+  let totalDailyhuntViews = 0;
 
   for (const article of articles) {
-    const views = viewsBySlug[article.slug];
-    if (views !== undefined) {
-      await Article.update({ views }, { where: { id: article.id } });
+    const directViews = viewsBySlug[article.slug] || 0;
+    const dailyhuntViews = viewsByTitle[article.title.trim()] || 0;
+
+    if (directViews || dailyhuntViews) {
+      await Article.update(
+        {
+          directViews,
+          dailyhuntViews,
+          views: directViews + dailyhuntViews,
+        },
+        { where: { id: article.id } }
+      );
       matched += 1;
-      totalViews += views;
+      totalDirectViews += directViews;
+      totalDailyhuntViews += dailyhuntViews;
     }
   }
 
@@ -315,8 +338,10 @@ const syncGA4Views = asyncHandler(async (req, res) => {
     ok: true,
     matched,
     totalArticles: articles.length,
-    totalViews,
-    message: `Synced ${matched} of ${articles.length} articles with real Google Analytics view counts.`,
+    totalDirectViews,
+    totalDailyhuntViews,
+    totalViews: totalDirectViews + totalDailyhuntViews,
+    message: `Synced ${matched} of ${articles.length} articles. Direct: ${totalDirectViews}, DailyHunt: ${totalDailyhuntViews}.`,
   });
 });
 
