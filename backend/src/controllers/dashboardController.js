@@ -53,12 +53,16 @@ const recentArticles = asyncHandler(async (req, res) => {
   const baseWhere = canManageAny ? {} : { authorId: req.user.id };
   const limit = Math.min(parseInt(req.query.limit, 10) || 5, 20);
 
+  const effectiveDate = sequelize.literal(
+    `CASE WHEN "Article"."status" = 'published' THEN "Article"."published_at" ELSE "Article"."updated_at" END`
+  );
+
   const articles = await Article.findAll({
     where: baseWhere,
     include: [{ model: User, as: 'author', attributes: ['id', 'name'] }],
-    order: [['updatedAt', 'DESC']],
+    order: [[effectiveDate, 'DESC']],
     limit,
-    attributes: ['id', 'title', 'slug', 'status', 'updatedAt'],
+    attributes: ['id', 'title', 'slug', 'status', 'updatedAt', 'publishedAt'],
   });
 
   res.json({ articles });

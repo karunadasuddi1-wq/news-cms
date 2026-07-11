@@ -227,7 +227,7 @@ export default function Dashboard() {
                     </span>
                     <span className="text-ink-900 flex-1 truncate">{a.title}</span>
                     <span className="font-mono text-[11px] text-ink-400 shrink-0">
-                      {new Date(a.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(a.status === 'published' ? a.publishedAt : a.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </Link>
                 );
