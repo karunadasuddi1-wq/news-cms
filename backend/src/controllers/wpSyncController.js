@@ -69,9 +69,10 @@ async function wpRequest(path, options = {}) {
       timeout: 30000,
     };
     const req = lib.request(opts, res => {
-      let data = '';
-      res.on('data', c => (data += c));
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
       res.on('end', () => {
+        const data = Buffer.concat(chunks).toString('utf8');
         try { resolve({ status: res.statusCode, data: JSON.parse(data) }); }
         catch { resolve({ status: res.statusCode, data }); }
       });
@@ -125,9 +126,10 @@ async function sideloadImage(imageUrl, title, altText) {
         timeout: 30000,
       };
       const req = https.request(opts, res => {
-        let data = '';
-        res.on('data', c => (data += c));
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
         res.on('end', () => {
+          const data = Buffer.concat(chunks).toString('utf8');
           try { resolve({ status: res.statusCode, data: JSON.parse(data) }); }
           catch { resolve({ status: res.statusCode, data }); }
         });

@@ -26,9 +26,10 @@ function request(url, options = {}) {
       timeout: 30000,
     };
     const req = lib.request(opts, res => {
-      let data = '';
-      res.on('data', chunk => (data += chunk));
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
       res.on('end', () => {
+        const data = Buffer.concat(chunks).toString('utf8');
         try { resolve({ status: res.statusCode, data: JSON.parse(data), headers: res.headers }); }
         catch { resolve({ status: res.statusCode, data, headers: res.headers }); }
       });

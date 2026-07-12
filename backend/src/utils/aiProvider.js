@@ -19,9 +19,10 @@ function httpsPost(hostname, path, headers, body) {
       timeout: 90000,
     };
     const req = https.request(opts, res => {
-      let d = '';
-      res.on('data', c => (d += c));
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
       res.on('end', () => {
+        const d = Buffer.concat(chunks).toString('utf8');
         try { resolve({ status: res.statusCode, data: JSON.parse(d) }); }
         catch { resolve({ status: res.statusCode, data: d }); }
       });

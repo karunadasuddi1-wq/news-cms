@@ -31,9 +31,9 @@ function httpsRequest(url, options = {}, redirectCount = 0) {
         resolve(httpsRequest(nextUrl, options, redirectCount + 1));
         return;
       }
-      let data = '';
-      res.on('data', c => (data += c));
-      res.on('end', () => resolve({ status: res.statusCode, body: data, headers: res.headers }));
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8'), headers: res.headers }));
     });
     req.on('error', reject);
     req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')); });
