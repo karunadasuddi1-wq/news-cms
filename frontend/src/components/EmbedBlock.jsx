@@ -29,22 +29,24 @@ function getEmbedHtml(url) {
     };
   }
 
-  // Instagram
+  // Instagram — use WordPress's native oEmbed auto-detection (a bare URL on
+  // its own line) instead of the blockquote+script pattern, since <script>
+  // tags get silently stripped by the rich text editor.
   if (url.includes('instagram.com/p/') || url.includes('instagram.com/reel/')) {
     const cleanUrl = url.split('?')[0].replace(/\/$/, '');
     return {
       type: 'Instagram',
-      html: `<blockquote class="instagram-media" data-instgrm-permalink="${cleanUrl}/" data-instgrm-version="14" style="max-width:658px;width:100%"><a href="${cleanUrl}">View on Instagram</a></blockquote><script async src="//www.instagram.com/embed.js"></script>`,
+      html: `<p>${cleanUrl}</p>`,
       preview: null,
       embedType: 'instagram',
     };
   }
 
-  // Twitter / X
+  // Twitter / X — same reasoning as Instagram above.
   if (url.includes('twitter.com/') || url.includes('x.com/')) {
     return {
       type: 'Twitter/X',
-      html: `<blockquote class="twitter-tweet" data-dnt="true"><a href="${url}">View tweet</a></blockquote><script async src="https://platform.twitter.com/widgets.js"></script>`,
+      html: `<p>${url}</p>`,
       preview: null,
       embedType: 'twitter',
     };

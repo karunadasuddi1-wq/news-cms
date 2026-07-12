@@ -98,6 +98,7 @@ export default function RichTextEditor({ content, onChange, disabled, placeholde
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Link.configure({
         openOnClick: false,
+        autolink: false,
         HTMLAttributes: { class: 'text-press-red underline' },
       }),
       Placeholder.configure({
