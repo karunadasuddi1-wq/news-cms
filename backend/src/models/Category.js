@@ -13,13 +13,13 @@ Category.init(
     name: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: 'categories_name_unique',
       validate: { notEmpty: true },
     },
     slug: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: 'categories_slug_unique',
     },
     description: {
       type: DataTypes.TEXT,

@@ -30,7 +30,7 @@ User.init(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: 'users_email_unique',
       validate: { isEmail: true },
     },
     passwordHash: {

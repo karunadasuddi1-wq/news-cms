@@ -17,7 +17,7 @@ const UserActivity = sequelize.define('UserActivity', {
   underscored: true,
   timestamps: false,
   indexes: [
-    { unique: true, fields: ['user_id', 'date'] },
+    { unique: true, fields: ['user_id', 'date'], name: 'user_activity_user_date_unique' },
   ],
 });
 

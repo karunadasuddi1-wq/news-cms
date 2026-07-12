@@ -20,7 +20,7 @@ Article.init(
     slug: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: 'articles_slug_unique',
     },
     excerpt: {
       type: DataTypes.STRING(500),
