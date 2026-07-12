@@ -66,7 +66,7 @@ async function wpRequest(path, options = {}) {
         'User-Agent': 'PublisherOS-CMS/1.0 (WordPress-Sync; +https://publisheros.in)',
         ...options.headers,
       },
-      timeout: 30000,
+      timeout: 60000,
     };
     const req = lib.request(opts, res => {
       const chunks = [];
@@ -123,7 +123,7 @@ async function sideloadImage(imageUrl, title, altText) {
           'Content-Type': contentType,
           'Content-Length': imageRes.buffer.length,
         },
-        timeout: 30000,
+        timeout: 60000,
       };
       const req = https.request(opts, res => {
         const chunks = [];
