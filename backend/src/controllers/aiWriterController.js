@@ -278,6 +278,7 @@ const saveDraft = asyncHandler(async (req, res) => {
     status: 'draft',
     seoTitle: seoTitle || null,
     seoDescription: seoDescription || null,
+    aiGenerated: true,
   });
 
   if (Array.isArray(tags)) {
@@ -343,4 +344,19 @@ const trending = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { fetchUrl, rewrite, saveDraft, trending };
+const recentGenerations = asyncHandler(async (req, res) => {
+  const canManageAny = req.user.role === 'admin' || req.user.role === 'editor';
+  const where = { aiGenerated: true };
+  if (!canManageAny) where.authorId = req.user.id;
+
+  const articles = await Article.findAll({
+    where,
+    order: [['createdAt', 'DESC']],
+    limit: 5,
+    attributes: ['id', 'title', 'status', 'createdAt'],
+  });
+
+  res.json({ articles });
+});
+
+module.exports = { fetchUrl, rewrite, saveDraft, trending, recentGenerations };

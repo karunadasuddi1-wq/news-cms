@@ -50,6 +50,12 @@ Article.init(
       allowNull: true,
       field: 'guest_submitter_name',
     },
+    aiGenerated: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'ai_generated',
+    },
     status: {
       type: DataTypes.ENUM(...STATUSES),
       allowNull: false,
