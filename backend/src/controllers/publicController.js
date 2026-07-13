@@ -5,6 +5,25 @@ const { generateArticleSchema } = require('../utils/schemaGenerator');
 const { getSetting } = require('./settingController');
 const { generateUniqueSlug } = require('../utils/slug');
 
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function formatPlainTextAsHtml(text) {
+  const looksLikeHtml = /<[a-z][\s\S]*>/i.test(text);
+  if (looksLikeHtml) return text;
+
+  return text
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => `<p>${escapeHtml(line)}</p>`)
+    .join('\n');
+}
+
 const INCLUDE = [
   { model: User, as: 'author', attributes: ['id', 'name', 'bio', 'avatar', 'socialLinks'] },
   { model: Category, as: 'category', attributes: ['id', 'name', 'slug'] },
@@ -129,7 +148,7 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
     title: title.trim(),
     slug,
     excerpt: (excerpt || '').trim() || null,
-    content: content.trim(),
+    content: formatPlainTextAsHtml(content.trim()),
     featuredImage: featuredImage || null,
     categoryId: category.id,
     authorId: guestUser.id,
