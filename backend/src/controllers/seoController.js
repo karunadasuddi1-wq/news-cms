@@ -89,6 +89,7 @@ const generateSeo = asyncHandler(async (req, res) => {
     userId: req.user?.id,
     action: 'ai_seo_generate',
     metadata: { articleId: existingArticleId, language: lang.key },
+    providerSettingKey: 'seo_ai_provider',
   });
   console.log('[seo-generate] raw response:', raw.slice(0, 400));
 

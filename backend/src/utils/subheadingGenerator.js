@@ -29,7 +29,7 @@ Respond with ONLY a JSON array, nothing else, in this exact shape:
 
   let raw;
   try {
-    raw = await callAI(systemPrompt, userPrompt, 500, { action: 'guest_submission_subheadings' });
+    raw = await callAI(systemPrompt, userPrompt, 500, { action: 'guest_submission_subheadings', providerSettingKey: 'subheading_ai_provider' });
   } catch (err) {
     console.warn('[subheadings] AI call failed, saving without subheadings:', err.message);
     return html;

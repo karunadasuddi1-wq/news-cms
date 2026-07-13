@@ -59,6 +59,9 @@ export default function Settings() {
     site_name: '',
     site_url: '',
     ai_provider: 'anthropic',
+    seo_ai_provider: '',
+    ai_writer_provider: '',
+    subheading_ai_provider: '',
     wp_sync_enabled: 'true',
     anthropic_api_key: '',
     anthropic_model: 'claude-sonnet-4-6',
@@ -95,6 +98,9 @@ export default function Settings() {
           site_name: s.site_name || '',
           site_url: s.site_url || '',
           ai_provider: s.ai_provider || 'anthropic',
+          seo_ai_provider: s.seo_ai_provider || '',
+          ai_writer_provider: s.ai_writer_provider || '',
+          subheading_ai_provider: s.subheading_ai_provider || '',
           wp_sync_enabled: s.wp_sync_enabled || 'true',
           wp_site_url: s.wp_site_url || '',
           wp_username: s.wp_username || '',
@@ -126,6 +132,9 @@ export default function Settings() {
         site_name: form.site_name,
         site_url: form.site_url,
         ai_provider: form.ai_provider,
+        seo_ai_provider: form.seo_ai_provider,
+        ai_writer_provider: form.ai_writer_provider,
+        subheading_ai_provider: form.subheading_ai_provider,
         wp_sync_enabled: form.wp_sync_enabled,
         anthropic_model: form.anthropic_model,
         openai_model: form.openai_model,
@@ -257,7 +266,37 @@ export default function Settings() {
               <select className={selectCls} value={form.ai_provider} onChange={e => setField('ai_provider', e.target.value)}>
                 {PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
+              <p className="text-xs text-ink-400 mt-1">
+                The default provider for any AI task that doesn't have its own override set below.
+              </p>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-paper-100">
+              <div>
+                <label className={labelCls}>SEO Generation</label>
+                <select className={selectCls} value={form.seo_ai_provider} onChange={e => setField('seo_ai_provider', e.target.value)}>
+                  <option value="">Use default</option>
+                  {PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>AI Writer</label>
+                <select className={selectCls} value={form.ai_writer_provider} onChange={e => setField('ai_writer_provider', e.target.value)}>
+                  <option value="">Use default</option>
+                  {PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Subheadings</label>
+                <select className={selectCls} value={form.subheading_ai_provider} onChange={e => setField('subheading_ai_provider', e.target.value)}>
+                  <option value="">Use default</option>
+                  {PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-ink-400">
+              Override which provider handles each specific AI task — e.g. use a cheaper/faster model for Subheadings while keeping a stronger one for AI Writer. Each API key below is shared across every task that uses that provider.
+            </p>
 
             {/* Provider status cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

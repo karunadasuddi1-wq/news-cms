@@ -230,6 +230,7 @@ Tags should be short lowercase English slugs (e.g. "karnataka-politics", "siddar
       userId: req.user?.id,
       action: 'ai_writer_rewrite',
       metadata: { tone, categoryId, hasSourceUrl: !!sourceUrl },
+      providerSettingKey: 'ai_writer_provider',
     });
   } catch (err) {
     return res.status(502).json({ error: `AI generation failed: ${err.message}` });

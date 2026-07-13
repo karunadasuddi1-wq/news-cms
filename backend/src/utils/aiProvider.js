@@ -94,8 +94,14 @@ async function callDeepSeek(apiKey, systemPrompt, userPrompt, maxTokens, model =
  * Automatically picks the active provider and API key
  */
 async function callAI(systemPrompt, userPrompt, maxTokens = 4000, options = {}) {
-  const provider = await getSetting('ai_provider', null) || 'anthropic';
-  console.log(`[ai-provider] Using provider: ${provider}`);
+  let provider = null;
+  if (options.providerSettingKey) {
+    provider = await getSetting(options.providerSettingKey, null);
+  }
+  if (!provider) {
+    provider = await getSetting('ai_provider', null) || 'anthropic';
+  }
+  console.log(`[ai-provider] Using provider: ${provider}${options.providerSettingKey ? ` (task: ${options.providerSettingKey})` : ''}`);
 
   // Estimate input tokens (~4 chars per token)
   const inputTokenEstimate = Math.round((systemPrompt.length + userPrompt.length) / 4);
