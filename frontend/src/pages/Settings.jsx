@@ -397,6 +397,7 @@ export default function Settings() {
             <p className="text-xs text-ink-400 mb-3">
               Share a link with outside contributors to let them submit an article without a CMS login. Submissions always land as a draft for an editor to review — never auto-published.
             </p>
+            <p className="text-[11px] font-mono uppercase tracking-wide text-ink-400 mb-1">Form</p>
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -433,6 +434,28 @@ export default function Settings() {
                 </button>
               )}
             </div>
+
+            {form.guest_submission_token && (
+              <div className="mt-3 pt-3 border-t border-paper-100">
+                <p className="text-[11px] font-mono uppercase tracking-wide text-ink-400 mb-1">Chat (wire-feed style)</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/chat-submit/${form.guest_submission_token}`}
+                    className={inputCls + ' bg-ink-50 text-ink-500 font-mono text-xs'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/chat-submit/${form.guest_submission_token}`)}
+                    className="text-xs font-medium px-3 py-2.5 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 whitespace-nowrap"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+
             <p className="text-xs text-ink-400 mt-2">
               Regenerating or revoking immediately invalidates the old link — remember to click Save Settings below for this to take effect.
             </p>
