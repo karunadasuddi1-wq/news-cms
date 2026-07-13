@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { generateArticleSchema } = require('../utils/schemaGenerator');
 const { getSetting } = require('./settingController');
 const { generateUniqueSlug } = require('../utils/slug');
+const { addSubheadings } = require('../utils/subheadingGenerator');
 
 function escapeHtml(text) {
   return text
@@ -144,11 +145,18 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
 
   const slug = await generateUniqueSlug(Article, title, null);
 
+  let finalContent = formatPlainTextAsHtml(content.trim());
+  try {
+    finalContent = await addSubheadings(finalContent);
+  } catch (err) {
+    console.warn('[guest-submit] Subheading generation failed (non-fatal):', err.message);
+  }
+
   const article = await Article.create({
     title: title.trim(),
     slug,
     excerpt: (excerpt || '').trim() || null,
-    content: formatPlainTextAsHtml(content.trim()),
+    content: finalContent,
     featuredImage: featuredImage || null,
     categoryId: category.id,
     authorId: guestUser.id,
