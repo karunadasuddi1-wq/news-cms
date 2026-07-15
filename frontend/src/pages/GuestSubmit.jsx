@@ -4,6 +4,7 @@ import client from '../api/client';
 import RichTextEditor from '../components/RichTextEditor';
 import TagInput from '../components/TagInput';
 import ImageUpload from '../components/ImageUpload';
+import EmailOtpGate from '../components/EmailOtpGate';
 
 const labelCls = 'block text-xs font-mono uppercase tracking-wide text-ink-600 mb-1.5';
 const inputCls = 'w-full px-3 py-2.5 border border-paper-200 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-ink-900';
@@ -24,8 +25,11 @@ function Card({ children }) {
   );
 }
 
+const SESSION_KEY_PREFIX = 'guest_form_session_';
+
 export default function GuestSubmit() {
   const { token } = useParams();
+  const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(SESSION_KEY_PREFIX + token) || null);
 
   const [categories, setCategories] = useState([]);
   const [submitterName, setSubmitterName] = useState('');
@@ -66,13 +70,22 @@ export default function GuestSubmit() {
         categoryId: categoryId || undefined,
         tags,
         submitterName,
-      });
+      }, { headers: { Authorization: `Bearer ${sessionToken}` } });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong submitting your article. Please try again.');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleVerified(newSessionToken) {
+    sessionStorage.setItem(SESSION_KEY_PREFIX + token, newSessionToken);
+    setSessionToken(newSessionToken);
+  }
+
+  if (!sessionToken) {
+    return <EmailOtpGate token={token} onVerified={handleVerified} />;
   }
 
   if (done) {
