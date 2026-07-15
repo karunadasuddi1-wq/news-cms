@@ -6,6 +6,8 @@ const Page = require('./Page');
 const Setting = require('./Setting');
 const AiUsageLog = require('./AiUsageLog');
 const UserActivity = require('./UserActivity');
+const GuestOtp = require('./GuestOtp');
+const GuestChatMessage = require('./GuestChatMessage');
 
 // Article associations
 Article.belongsTo(User, { as: 'author', foreignKey: { name: 'authorId', field: 'author_id', allowNull: false } });
@@ -24,6 +26,8 @@ module.exports = {
   Setting,
   AiUsageLog,
   UserActivity,
+  GuestOtp,
+  GuestChatMessage,
   sequelize,
   User,
   Category,

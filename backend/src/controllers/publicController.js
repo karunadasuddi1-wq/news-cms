@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Article, User, Category } = require('../models');
+const { Article, User, Category, GuestChatMessage } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateArticleSchema } = require('../utils/schemaGenerator');
 const { getSetting } = require('./settingController');
@@ -114,13 +114,16 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
   if (!configuredToken) {
     return res.status(403).json({ error: 'Guest submissions are not enabled for this site.' });
   }
-  if (req.body.token !== configuredToken) {
+  if (req.guestSubmissionToken !== configuredToken) {
     return res.status(403).json({ error: 'Invalid or expired submission link.' });
   }
 
-  const { title, content, excerpt, featuredImage, categoryId, tags, submitterName } = req.body;
+  const { title, content, excerpt, featuredImage, categoryId, tags, submitterName, source } = req.body;
 
   if (!title || !title.trim() || !content || content.trim().length < 50) {
+    if (source === 'chat') {
+      await GuestChatMessage.create({ email: req.guestEmail, fromType: 'them', tone: 'error', text: "That's a bit short to be a full article (needs at least 50 characters) — it wasn't saved. Send the full piece and I'll file it." });
+    }
     return res.status(400).json({ error: 'Please provide a title and at least 50 characters of content.' });
   }
 
@@ -167,6 +170,19 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
   if (Array.isArray(tags) && tags.length) {
     article.tags = tags.filter(t => t && t.trim()).map(t => t.trim());
     await article.save();
+  }
+
+  if (source === 'chat') {
+    if (featuredImage) {
+      await GuestChatMessage.create({ email: req.guestEmail, fromType: 'me', imageUrl: featuredImage });
+    }
+    await GuestChatMessage.create({ email: req.guestEmail, fromType: 'me', text: content.trim() });
+    await GuestChatMessage.create({
+      email: req.guestEmail,
+      fromType: 'them',
+      tone: 'success',
+      text: "✅ Saved as a draft. Send the next one whenever you're ready.",
+    });
   }
 
   res.status(201).json({ ok: true, message: 'Submitted for review. Thank you!' });

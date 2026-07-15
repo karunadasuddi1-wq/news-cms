@@ -2,7 +2,7 @@ const { Op, fn, col, literal } = require('sequelize');
 const { Article, User, Category, sequelize } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { getSetting } = require('./settingController');
-const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle } = require('../utils/ga4');
+const { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle, fetchGA4ViewsByCityAndPath } = require('../utils/ga4');
 
 function canManageAny(user) {
   return user.role === 'admin' || user.role === 'editor';
@@ -395,4 +395,52 @@ const topArticlesByViews = asyncHandler(async (req, res) => {
   res.json({ articles: ranked, startDate, endDate });
 });
 
-module.exports = { overview, daily, articles, authors, categories, syncGA4Views, topArticlesByViews };
+const geoCategoryReport = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'editor') {
+    return res.status(403).json({ error: 'Ask an editor for this report.' });
+  }
+
+  const propertyId = await getSetting('ga4_property_id', null);
+  const serviceAccountJson = await getSetting('ga4_service_account_json', null);
+  if (!propertyId || !serviceAccountJson) {
+    return res.status(400).json({ error: 'Google Analytics is not configured yet. Add the Property ID and service account JSON in Settings first.' });
+  }
+
+  const days = Math.min(parseInt(req.query.days, 10) || 30, 365);
+
+  let rows;
+  try {
+    rows = await fetchGA4ViewsByCityAndPath(propertyId, serviceAccountJson, { days });
+  } catch (err) {
+    return res.status(502).json({ error: err.message });
+  }
+
+  const dbArticles = await Article.findAll({
+    attributes: ['slug'],
+    include: [{ model: Category, as: 'category', attributes: ['name'] }],
+  });
+  const slugToCategory = {};
+  for (const a of dbArticles) {
+    if (a.category?.name) slugToCategory[a.slug] = a.category.name;
+  }
+
+  const cityCategoryViews = {};
+  for (const row of rows) {
+    const categoryName = slugToCategory[row.slug];
+    if (!categoryName) continue;
+    if (!cityCategoryViews[row.city]) cityCategoryViews[row.city] = {};
+    cityCategoryViews[row.city][categoryName] = (cityCategoryViews[row.city][categoryName] || 0) + row.views;
+  }
+
+  const report = Object.entries(cityCategoryViews).map(([city, categoryViews]) => {
+    const breakdown = Object.entries(categoryViews)
+      .map(([category, views]) => ({ category, views }))
+      .sort((a, b) => b.views - a.views);
+    const totalViews = breakdown.reduce((sum, c) => sum + c.views, 0);
+    return { city, totalViews, topCategory: breakdown[0]?.category || null, breakdown };
+  }).sort((a, b) => b.totalViews - a.totalViews);
+
+  res.json({ report, days });
+});
+
+module.exports = { overview, daily, articles, authors, categories, syncGA4Views, topArticlesByViews, geoCategoryReport };

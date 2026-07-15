@@ -81,6 +81,10 @@ export default function Analytics() {
   const [artSort, setArtSort] = useState('views');
   const [authorStats, setAuthorStats] = useState([]);
   const [catStats, setCatStats] = useState([]);
+  const [geoReport, setGeoReport] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState('');
+  const [geoDays, setGeoDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ga4Syncing, setGa4Syncing] = useState(false);
@@ -139,6 +143,16 @@ export default function Analytics() {
       client.get('/analytics/categories', { params: p }).then(r => setCatStats(r.data.categories || [])).catch(() => {});
     }
   }, [tab, params, artSort, artPage, can.manageAny]);
+
+  useEffect(() => {
+    if (tab !== 'geography' || !can.manageAny) return;
+    setGeoLoading(true);
+    setGeoError('');
+    client.get(`/analytics/geo-categories?days=${geoDays}`)
+      .then(r => setGeoReport(r.data.report))
+      .catch(err => setGeoError(apiErrorMessage(err)))
+      .finally(() => setGeoLoading(false));
+  }, [tab, can.manageAny, geoDays]);
 
   const maxViews = Math.max(...daily.map(d => d.views || 0), 1);
   const maxArticles = Math.max(...daily.map(d => d.articles || 0), 1);
@@ -253,6 +267,7 @@ export default function Analytics() {
             <button className={tabCls('articles')} onClick={() => setTab('articles')}>Articles</button>
             {can.manageAny && <button className={tabCls('authors')} onClick={() => setTab('authors')}>Authors</button>}
             <button className={tabCls('categories')} onClick={() => setTab('categories')}>Categories</button>
+            {can.manageAny && <button className={tabCls('geography')} onClick={() => setTab('geography')}>Geography</button>}
           </div>
 
           {/* Articles tab */}
@@ -407,6 +422,55 @@ export default function Analytics() {
                 ))}
                 {catStats.length === 0 && <div className="text-center py-12 text-ink-400 text-sm">No data</div>}
               </div>
+            </div>
+          )}
+
+          {/* Geography tab */}
+          {tab === 'geography' && can.manageAny && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-ink-400">Where your readers are, and which category each city reads most — built from Google Analytics location data, matched to your articles' categories.</p>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={geoDays}
+                  onChange={e => setGeoDays(parseInt(e.target.value, 10) || 30)}
+                  className="w-16 border border-paper-200 rounded px-2 py-1 text-xs bg-white text-center shrink-0 ml-3"
+                  title="Days to look back"
+                />
+              </div>
+              {geoError && <div className="text-sm text-press-red py-4">{geoError}</div>}
+              {geoLoading ? (
+                <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-12 text-center">Loading…</p>
+              ) : !geoReport || geoReport.length === 0 ? (
+                <div className="text-center py-12 text-ink-400 text-sm">No geographic data in this range.</div>
+              ) : (
+                <div className="bg-white border border-paper-200 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-paper-50 border-b border-paper-200 text-xs font-mono uppercase tracking-wide text-ink-500">
+                    <div className="col-span-3">City</div>
+                    <div className="col-span-2 text-right">Total Views</div>
+                    <div className="col-span-2">Top Category</div>
+                    <div className="col-span-5">Breakdown</div>
+                  </div>
+                  {geoReport.slice(0, 25).map((row) => (
+                    <div key={row.city} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-paper-50 last:border-0 hover:bg-paper-50 transition-colors text-sm items-center">
+                      <div className="col-span-3 font-medium text-ink-900">{row.city}</div>
+                      <div className="col-span-2 text-right font-mono font-bold" style={{ color: '#2e6f6b' }}>{fmtViews(row.totalViews)}</div>
+                      <div className="col-span-2">
+                        <span className="px-2 py-1 rounded-full text-[11px] font-semibold bg-press-red/10 text-press-red">{row.topCategory}</span>
+                      </div>
+                      <div className="col-span-5 flex flex-wrap gap-1.5">
+                        {row.breakdown.slice(0, 4).map(c => (
+                          <span key={c.category} className="text-[11px] font-mono text-ink-500 bg-paper-50 border border-paper-200 rounded px-1.5 py-0.5">
+                            {c.category} · {fmtViews(c.views)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>

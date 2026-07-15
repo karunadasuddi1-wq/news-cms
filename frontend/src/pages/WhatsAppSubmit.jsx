@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import client from '../api/client';
 import ImageUpload from '../components/ImageUpload';
+import EmailOtpGate from '../components/EmailOtpGate';
 
 function Bubble({ from, children, tone }) {
   const isMe = from === 'me';
@@ -36,14 +37,18 @@ function ImageBubble({ url }) {
   );
 }
 
+const SESSION_KEY_PREFIX = 'guest_chat_session_';
+
 export default function WhatsAppSubmit() {
   const { token } = useParams();
   const scrollRef = useRef(null);
 
+  const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(SESSION_KEY_PREFIX + token) || null);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [loadingHistory, setLoadingHistory] = useState(!!sessionToken);
+
   const [stage, setStage] = useState('name');
-  const [messages, setMessages] = useState([
-    { from: 'them', text: "👋 Hi! Before we start — what's your name?" },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [submitterName, setSubmitterName] = useState('');
   const [pendingImage, setPendingImage] = useState('');
   const [input, setInput] = useState('');
@@ -54,6 +59,33 @@ export default function WhatsAppSubmit() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!sessionToken) return;
+    client.get('/public/guest-chat/history', { headers: { Authorization: `Bearer ${sessionToken}` } })
+      .then(res => {
+        const history = res.data.messages || [];
+        if (history.length > 0) {
+          setMessages(history.map(m => ({ from: m.fromType, text: m.text, image: m.imageUrl, tone: m.tone })));
+          setStage('content');
+          setArticleCount(history.filter(m => m.tone === 'success').length);
+        } else {
+          setMessages([{ from: 'them', text: "👋 Hi! Before we start — what's your name?" }]);
+        }
+      })
+      .catch(() => {
+        sessionStorage.removeItem(SESSION_KEY_PREFIX + token);
+        setSessionToken(null);
+      })
+      .finally(() => setLoadingHistory(false));
+  }, [sessionToken, token]);
+
+  function handleVerified(newSessionToken, email) {
+    sessionStorage.setItem(SESSION_KEY_PREFIX + token, newSessionToken);
+    setSessionToken(newSessionToken);
+    setVerifiedEmail(email);
+    setLoadingHistory(true);
+  }
 
   async function sendText() {
     const text = input.trim();
@@ -97,11 +129,12 @@ export default function WhatsAppSubmit() {
         content: text,
         featuredImage: imageForThis,
         submitterName,
-      });
+        source: 'chat',
+      }, { headers: { Authorization: `Bearer ${sessionToken}` } });
       setArticleCount((c) => c + 1);
       setMessages((m) => [
         ...m,
-        { from: 'them', tone: 'success', text: `✅ Saved as a draft. That's ${articleCount + 1} so far — send the next one whenever you're ready.` },
+        { from: 'them', tone: 'success', text: "✅ Saved as a draft. Send the next one whenever you're ready." },
       ]);
     } catch (err) {
       setMessages((m) => [
@@ -126,15 +159,27 @@ export default function WhatsAppSubmit() {
     setShowUpload(false);
   }
 
+  if (!sessionToken) {
+    return <EmailOtpGate token={token} onVerified={handleVerified} />;
+  }
+
+  if (loadingHistory) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper-50">
+        <p className="font-mono text-xs uppercase tracking-widest text-ink-400">Loading your conversation…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-paper-50 max-w-lg mx-auto border-x border-paper-200">
       <div className="bg-ink-900 text-white px-4 py-3.5 flex items-center gap-3 shrink-0">
         <div className="w-9 h-9 rounded-full bg-press-red flex items-center justify-center font-display font-bold text-sm">
           ED
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm leading-tight">Editorial Desk</p>
-          <p className="text-[11px] text-white/60 leading-tight">Story submissions</p>
+          <p className="text-[11px] text-white/60 leading-tight truncate">{verifiedEmail || 'Story submissions'}</p>
         </div>
         {articleCount > 0 && (
           <div className="text-[11px] font-mono bg-wire-teal/20 text-wire-teal-dark border border-wire-teal/30 rounded-full px-2.5 py-1">

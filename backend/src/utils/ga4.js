@@ -96,4 +96,40 @@ async function fetchGA4DailyHuntViewsByTitle(propertyId, serviceAccountJsonRaw, 
   return viewsByTitle;
 }
 
-module.exports = { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle, resolveDateRange };
+// Fetches pageview counts broken down by BOTH city and page path, for
+// building a "which regions read which categories" report. Returns an array
+// of { city, slug, views } rows — matching to categories happens in the
+// caller (analyticsController.js), which already has the Article/Category
+// data and the same slug-extraction convention used elsewhere in this file.
+async function fetchGA4ViewsByCityAndPath(propertyId, serviceAccountJsonRaw, dateOptions = {}) {
+  const client = buildClient(serviceAccountJsonRaw);
+  const { startDate, endDate } = resolveDateRange(dateOptions);
+
+  let res;
+  try {
+    res = await client.request({
+      url: `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+      method: 'POST',
+      data: {
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'city' }, { name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }],
+        limit: 100000,
+      },
+    });
+  } catch (err) {
+    const detail = err.response?.data?.error?.message || err.message;
+    throw new Error(`Google Analytics API request failed (city/category query): ${detail}`);
+  }
+
+  const rows = res.data?.rows || [];
+  return rows.map(row => {
+    const city = row.dimensionValues?.[0]?.value || '(not set)';
+    const pagePath = row.dimensionValues?.[1]?.value || '';
+    const views = parseInt(row.metricValues?.[0]?.value, 10) || 0;
+    const slug = pagePath.split('?')[0].split('#')[0].replace(/^\/|\/$/g, '');
+    return { city, slug, views };
+  }).filter(r => r.slug && r.views > 0);
+}
+
+module.exports = { fetchGA4ViewsBySlug, fetchGA4DailyHuntViewsByTitle, fetchGA4ViewsByCityAndPath, resolveDateRange };
