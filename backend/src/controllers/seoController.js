@@ -85,26 +85,54 @@ const generateSeo = asyncHandler(async (req, res) => {
     ? buildEnglishPrompt(currentTitle, contentPreview)
     : buildRegionalPrompt(lang, currentTitle, contentPreview);
 
-  const raw = await callAI(`You are a ${lang.label} news SEO editor.`, prompt, 900, {
-    userId: req.user?.id,
-    action: 'ai_seo_generate',
-    metadata: { articleId: existingArticleId, language: lang.key },
-    providerSettingKey: 'seo_ai_provider',
-  });
-  console.log('[seo-generate] raw response:', raw.slice(0, 400));
+  let parsed = null;
+  let focusKeyword = '';
+  let strayWordWarnings = [];
+  const MAX_ATTEMPTS = 2;
 
-  const parsed = extractJson(raw);
-
-  if (!parsed || !parsed.headline) {
-    console.error('[seo-generate] Could not extract fields from:', raw);
-    return res.status(502).json({
-      error: 'AI returned an unexpected response. Try again or fill the fields manually.',
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const raw = await callAI(`You are a ${lang.label} news SEO editor.`, prompt, 900, {
+      userId: req.user?.id,
+      action: 'ai_seo_generate',
+      metadata: { articleId: existingArticleId, language: lang.key, attempt },
+      providerSettingKey: 'seo_ai_provider',
     });
+    console.log(`[seo-generate] raw response (attempt ${attempt}):`, raw.slice(0, 400));
+
+    const attemptParsed = extractJson(raw);
+    if (!attemptParsed || !attemptParsed.headline) {
+      if (attempt === MAX_ATTEMPTS) {
+        console.error('[seo-generate] Could not extract fields from:', raw);
+        return res.status(502).json({
+          error: 'AI returned an unexpected response. Try again or fill the fields manually.',
+        });
+      }
+      continue;
+    }
+
+    const attemptFocusKeyword = lang.isEnglish
+      ? (attemptParsed.focusKeyword || '').trim()
+      : extractFocusKeyword(attemptParsed.focusKeyword);
+
+    const attemptWarnings = checkFocusKeywordCoverage(attemptFocusKeyword, {
+      headline: attemptParsed.headline,
+      excerpt: attemptParsed.excerpt,
+      seoTitle: attemptParsed.seoTitle,
+      seoDescription: attemptParsed.seoDescription,
+    }, { checkExtraEnglishWords: !lang.isEnglish });
+
+    const strayWordsThisAttempt = attemptWarnings.filter(w => w.startsWith('Extra English word'));
+
+    parsed = attemptParsed;
+    focusKeyword = attemptFocusKeyword;
+    strayWordWarnings = strayWordsThisAttempt;
+
+    if (strayWordsThisAttempt.length === 0) break;
+    if (attempt < MAX_ATTEMPTS) {
+      console.warn(`[seo-generate] Attempt ${attempt} had stray English words, retrying:`, strayWordsThisAttempt);
+    }
   }
 
-  const focusKeyword = lang.isEnglish
-    ? (parsed.focusKeyword || '').trim()
-    : extractFocusKeyword(parsed.focusKeyword);
   const keywordSlugPart = slugifyKeyword(focusKeyword);
 
   const baseSlug = buildBaseSlug(parsed.slug, keywordSlugPart);
@@ -121,13 +149,9 @@ const generateSeo = asyncHandler(async (req, res) => {
 
   const kannadaKeyword = lang.isEnglish ? '' : (parsed.kannadaKeyword || '');
 
-  const focusWarnings = checkFocusKeywordCoverage(focusKeyword, {
-    headline: parsed.headline,
-    excerpt: parsed.excerpt,
-    seoTitle: parsed.seoTitle,
-    seoDescription: parsed.seoDescription,
-  }, { checkExtraEnglishWords: !lang.isEnglish });
-  focusWarnings.forEach(w => console.warn(`[seo-generate] ${w}`));
+  if (strayWordWarnings.length > 0) {
+    console.warn('[seo-generate] Stray English words remained after retry:', strayWordWarnings);
+  }
 
   if (!lang.isEnglish) {
     const kannadaWarnings = checkKannadaKeywordCoverage(kannadaKeyword, {
@@ -149,6 +173,7 @@ const generateSeo = asyncHandler(async (req, res) => {
     altText,
     tags,
     language: lang.key,
+    warnings: strayWordWarnings,
   });
 });
 
