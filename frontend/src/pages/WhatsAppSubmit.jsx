@@ -39,6 +39,7 @@ function ImageBubble({ url }) {
 
 const SESSION_KEY_PREFIX = 'guest_chat_session_';
 const NAME_KEY_PREFIX = 'guest_chat_name_';
+const MESSAGES_KEY_PREFIX = 'guest_chat_messages_';
 
 export default function WhatsAppSubmit() {
   const { token } = useParams();
@@ -63,6 +64,11 @@ export default function WhatsAppSubmit() {
   }, [messages]);
 
   useEffect(() => {
+    if (otpRequired !== false || messages.length === 0) return;
+    localStorage.setItem(MESSAGES_KEY_PREFIX + token, JSON.stringify(messages));
+  }, [messages, otpRequired, token]);
+
+  useEffect(() => {
     client.get('/public/guest-submission-config')
       .then(res => setOtpRequired(res.data.otpRequired))
       .catch(() => setOtpRequired(true));
@@ -72,7 +78,25 @@ export default function WhatsAppSubmit() {
     if (otpRequired === null) return;
 
     if (!otpRequired) {
+      const savedMessagesRaw = localStorage.getItem(MESSAGES_KEY_PREFIX + token);
       const savedName = localStorage.getItem(NAME_KEY_PREFIX + token);
+
+      if (savedMessagesRaw) {
+        try {
+          const savedMessages = JSON.parse(savedMessagesRaw);
+          if (Array.isArray(savedMessages) && savedMessages.length > 0) {
+            setMessages(savedMessages);
+            setStage('content');
+            setArticleCount(savedMessages.filter(m => m.tone === 'success').length);
+            if (savedName) setSubmitterName(savedName);
+            setLoadingHistory(false);
+            return;
+          }
+        } catch (err) {
+          // Corrupted local data — fall through to the normal fresh-start flow below.
+        }
+      }
+
       if (savedName) {
         setSubmitterName(savedName);
         setStage('content');
