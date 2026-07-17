@@ -38,6 +38,7 @@ function ImageBubble({ url }) {
 }
 
 const SESSION_KEY_PREFIX = 'guest_chat_session_';
+const NAME_KEY_PREFIX = 'guest_chat_name_';
 
 export default function WhatsAppSubmit() {
   const { token } = useParams();
@@ -71,7 +72,14 @@ export default function WhatsAppSubmit() {
     if (otpRequired === null) return;
 
     if (!otpRequired) {
-      setMessages([{ from: 'them', text: "👋 Hi! Before we start — what's your name?" }]);
+      const savedName = localStorage.getItem(NAME_KEY_PREFIX + token);
+      if (savedName) {
+        setSubmitterName(savedName);
+        setStage('content');
+        setMessages([{ from: 'them', text: `👋 Welcome back, ${savedName.split(' ')[0]}! Send your next article whenever you're ready.` }]);
+      } else {
+        setMessages([{ from: 'them', text: "👋 Hi! Before we start — what's your name?" }]);
+      }
       setLoadingHistory(false);
       return;
     }
@@ -113,6 +121,7 @@ export default function WhatsAppSubmit() {
 
     if (stage === 'name') {
       setSubmitterName(text);
+      localStorage.setItem(NAME_KEY_PREFIX + token, text);
       setMessages((m) => [
         ...m,
         { from: 'me', text },
