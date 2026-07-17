@@ -191,7 +191,7 @@ export default function WhatsAppSubmit() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-paper-50 max-w-lg mx-auto border-x border-paper-200">
+    <div className="h-dvh flex flex-col bg-paper-50 max-w-lg mx-auto border-x border-paper-200">
       <div className="bg-ink-900 text-white px-4 py-3.5 flex items-center gap-3 shrink-0">
         <div className="w-9 h-9 rounded-full bg-press-red flex items-center justify-center font-display font-bold text-sm">
           ED
