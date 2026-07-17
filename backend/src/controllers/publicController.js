@@ -30,6 +30,11 @@ const INCLUDE = [
   { model: Category, as: 'category', attributes: ['id', 'name', 'slug'] },
 ];
 
+const guestSubmissionConfig = asyncHandler(async (req, res) => {
+  const otpRequired = (await getSetting('guest_otp_required', 'true')) !== 'false';
+  res.json({ otpRequired });
+});
+
 const listCategories = asyncHandler(async (req, res) => {
   const categories = await Category.findAll({ order: [['name', 'ASC']] });
   res.json({ categories });
@@ -121,7 +126,7 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
   const { title, content, excerpt, featuredImage, categoryId, tags, submitterName, source } = req.body;
 
   if (!title || !title.trim() || !content || content.trim().length < 50) {
-    if (source === 'chat') {
+    if (source === 'chat' && req.guestEmail) {
       await GuestChatMessage.create({ email: req.guestEmail, fromType: 'them', tone: 'error', text: "That's a bit short to be a full article (needs at least 50 characters) — it wasn't saved. Send the full piece and I'll file it." });
     }
     return res.status(400).json({ error: 'Please provide a title and at least 50 characters of content.' });
@@ -172,7 +177,7 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
     await article.save();
   }
 
-  if (source === 'chat') {
+  if (source === 'chat' && req.guestEmail) {
     if (featuredImage) {
       await GuestChatMessage.create({ email: req.guestEmail, fromType: 'me', imageUrl: featuredImage });
     }
@@ -188,4 +193,4 @@ const submitGuestArticle = asyncHandler(async (req, res) => {
   res.status(201).json({ ok: true, message: 'Submitted for review. Thank you!' });
 });
 
-module.exports = { listCategories, listArticles, getArticle, sitemap, submitGuestArticle };
+module.exports = { listCategories, listArticles, getArticle, sitemap, submitGuestArticle, guestSubmissionConfig };

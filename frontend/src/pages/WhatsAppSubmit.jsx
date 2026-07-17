@@ -45,7 +45,8 @@ export default function WhatsAppSubmit() {
 
   const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(SESSION_KEY_PREFIX + token) || null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
-  const [loadingHistory, setLoadingHistory] = useState(!!sessionToken);
+  const [otpRequired, setOtpRequired] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const [stage, setStage] = useState('name');
   const [messages, setMessages] = useState([]);
@@ -61,7 +62,25 @@ export default function WhatsAppSubmit() {
   }, [messages]);
 
   useEffect(() => {
-    if (!sessionToken) return;
+    client.get('/public/guest-submission-config')
+      .then(res => setOtpRequired(res.data.otpRequired))
+      .catch(() => setOtpRequired(true));
+  }, []);
+
+  useEffect(() => {
+    if (otpRequired === null) return;
+
+    if (!otpRequired) {
+      setMessages([{ from: 'them', text: "👋 Hi! Before we start — what's your name?" }]);
+      setLoadingHistory(false);
+      return;
+    }
+
+    if (!sessionToken) {
+      setLoadingHistory(false);
+      return;
+    }
+
     client.get('/public/guest-chat/history', { headers: { Authorization: `Bearer ${sessionToken}` } })
       .then(res => {
         const history = res.data.messages || [];
@@ -78,7 +97,7 @@ export default function WhatsAppSubmit() {
         setSessionToken(null);
       })
       .finally(() => setLoadingHistory(false));
-  }, [sessionToken, token]);
+  }, [sessionToken, token, otpRequired]);
 
   function handleVerified(newSessionToken, email) {
     sessionStorage.setItem(SESSION_KEY_PREFIX + token, newSessionToken);
@@ -130,7 +149,7 @@ export default function WhatsAppSubmit() {
         featuredImage: imageForThis,
         submitterName,
         source: 'chat',
-      }, { headers: { Authorization: `Bearer ${sessionToken}` } });
+      }, sessionToken ? { headers: { Authorization: `Bearer ${sessionToken}` } } : undefined);
       setArticleCount((c) => c + 1);
       setMessages((m) => [
         ...m,
@@ -159,7 +178,7 @@ export default function WhatsAppSubmit() {
     setShowUpload(false);
   }
 
-  if (!sessionToken) {
+  if (otpRequired && !sessionToken) {
     return <EmailOtpGate token={token} onVerified={handleVerified} />;
   }
 

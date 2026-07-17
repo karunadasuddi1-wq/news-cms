@@ -30,6 +30,7 @@ const SESSION_KEY_PREFIX = 'guest_form_session_';
 export default function GuestSubmit() {
   const { token } = useParams();
   const [sessionToken, setSessionToken] = useState(() => sessionStorage.getItem(SESSION_KEY_PREFIX + token) || null);
+  const [otpRequired, setOtpRequired] = useState(null);
 
   const [categories, setCategories] = useState([]);
   const [submitterName, setSubmitterName] = useState('');
@@ -43,6 +44,12 @@ export default function GuestSubmit() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    client.get('/public/guest-submission-config')
+      .then(res => setOtpRequired(res.data.otpRequired))
+      .catch(() => setOtpRequired(true));
+  }, []);
 
   useEffect(() => {
     client.get('/public/categories')
@@ -70,7 +77,7 @@ export default function GuestSubmit() {
         categoryId: categoryId || undefined,
         tags,
         submitterName,
-      }, { headers: { Authorization: `Bearer ${sessionToken}` } });
+      }, sessionToken ? { headers: { Authorization: `Bearer ${sessionToken}` } } : undefined);
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong submitting your article. Please try again.');
@@ -84,7 +91,15 @@ export default function GuestSubmit() {
     setSessionToken(newSessionToken);
   }
 
-  if (!sessionToken) {
+  if (otpRequired === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper-50">
+        <p className="font-mono text-xs uppercase tracking-widest text-ink-400">Loading…</p>
+      </div>
+    );
+  }
+
+  if (otpRequired && !sessionToken) {
     return <EmailOtpGate token={token} onVerified={handleVerified} />;
   }
 

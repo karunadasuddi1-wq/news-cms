@@ -1,7 +1,20 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/env');
+const { getSetting } = require('../controllers/settingController');
 
-function requireGuestAuth(req, res, next) {
+async function requireGuestAuth(req, res, next) {
+  const otpRequired = (await getSetting('guest_otp_required', 'true')) !== 'false';
+
+  if (!otpRequired) {
+    const configuredToken = await getSetting('guest_submission_token', null);
+    if (!configuredToken || req.body.token !== configuredToken) {
+      return res.status(403).json({ error: 'Invalid or expired submission link.' });
+    }
+    req.guestEmail = null;
+    req.guestSubmissionToken = req.body.token;
+    return next();
+  }
+
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Please verify your email first.' });

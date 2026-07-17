@@ -99,6 +99,7 @@ export default function Settings() {
     activity_idle_threshold_minutes: '5',
     content_language: 'kannada',
     guest_submission_token: '',
+    guest_otp_required: 'true',
     ga4_property_id: '',
     ga4_service_account_json: '',
     ai_daily_request_limit: '500',
@@ -125,6 +126,7 @@ export default function Settings() {
           activity_idle_threshold_minutes: s.activity_idle_threshold_minutes || '5',
           content_language: s.content_language || 'kannada',
           guest_submission_token: s.guest_submission_token || '',
+          guest_otp_required: s.guest_otp_required || 'true',
           ga4_property_id: s.ga4_property_id || '',
           ai_daily_request_limit: s.ai_daily_request_limit || '500',
           anthropic_model: s.anthropic_model || 'claude-sonnet-4-6',
@@ -167,6 +169,7 @@ export default function Settings() {
       payload.activity_idle_threshold_minutes = form.activity_idle_threshold_minutes;
       payload.content_language = form.content_language;
       payload.guest_submission_token = form.guest_submission_token;
+      payload.guest_otp_required = form.guest_otp_required;
       payload.ga4_property_id = form.ga4_property_id;
       payload.ai_daily_request_limit = form.ai_daily_request_limit;
       if (form.ga4_service_account_json) payload.ga4_service_account_json = form.ga4_service_account_json;
@@ -466,6 +469,27 @@ export default function Settings() {
             <p className="text-xs text-ink-400 mb-3">
               Share a link with outside contributors to let them submit an article without a CMS login. Submissions always land as a draft for an editor to review — never auto-published.
             </p>
+
+            <div className="flex items-center justify-between p-3 bg-paper-50 border border-paper-200 rounded-lg mb-4">
+              <div>
+                <p className="text-sm font-medium text-ink-800">Require email verification (OTP)</p>
+                <p className="text-xs text-ink-400 mt-0.5">
+                  When off, both links work exactly like before OTP was added — no email step, no per-person chat history.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer shrink-0 ml-4">
+                <input
+                  type="checkbox"
+                  checked={form.guest_otp_required === 'true'}
+                  onChange={e => setField('guest_otp_required', e.target.checked ? 'true' : 'false')}
+                  className="w-4 h-4 accent-press-red"
+                />
+                <span className="text-xs font-mono uppercase tracking-wide text-ink-600">
+                  {form.guest_otp_required === 'true' ? 'On' : 'Paused'}
+                </span>
+              </label>
+            </div>
+
             <p className="text-[11px] font-mono uppercase tracking-wide text-ink-400 mb-1">Form</p>
             <div className="flex items-center gap-2">
               <input
