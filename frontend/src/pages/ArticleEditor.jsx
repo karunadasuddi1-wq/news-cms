@@ -313,6 +313,11 @@ export default function ArticleEditor() {
     setError('');
     setSaving(true);
     try {
+      const savePayload = { ...form };
+      if (!can.manageAny || !savePayload.authorId) delete savePayload.authorId;
+      if (!savePayload.scheduledAt) savePayload.scheduledAt = null;
+      await client.put(`/articles/${id}`, savePayload);
+
       const body = { status: nextStatus };
       if (scheduledAt) body.scheduledAt = scheduledAt;
       const res = await client.patch(`/articles/${id}/status`, body);
