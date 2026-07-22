@@ -187,7 +187,7 @@ const update = asyncHandler(async (req, res) => {
     });
   }
 
-  const { title, excerpt, content, featuredImage, categoryId, slug: customSlug } = req.body;
+  const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug } = req.body;
 
   if (title && title.trim()) article.title = title.trim();
 
@@ -205,6 +205,11 @@ const update = asyncHandler(async (req, res) => {
     const category = await Category.findByPk(categoryId);
     if (!category) return res.status(400).json({ error: 'That category does not exist.' });
     article.categoryId = categoryId;
+  }
+  if (authorId && canManage) {
+    const newAuthor = await User.findByPk(authorId);
+    if (!newAuthor) return res.status(400).json({ error: 'That author does not exist.' });
+    article.authorId = authorId;
   }
 
   applySeoFields(article, req.body);
