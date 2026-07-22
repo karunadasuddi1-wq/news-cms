@@ -10,12 +10,20 @@ function toHashtags(tags) {
     .join(' ');
 }
 
+function buildText(title, hashtags, includeUrl, url) {
+  const parts = [title];
+  if (hashtags) parts.push(hashtags);
+  if (includeUrl) parts.push(url);
+  return parts.join('\n\n');
+}
+
 const PLATFORMS = [
   {
     key: 'facebook',
     label: 'Facebook',
     color: '#1877F2',
     icon: '📘',
+    previewText: () => null,
     buildUrl: ({ url }) => `https://www.facebook.com/sharer.php?u=${encodeURIComponent(url)}`,
   },
   {
@@ -23,26 +31,23 @@ const PLATFORMS = [
     label: 'X (Twitter)',
     color: '#000000',
     icon: '𝕏',
-    buildUrl: ({ url, title, hashtags }) => {
-      const text = hashtags ? `${title}\n\n${hashtags}` : title;
-      return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-    },
+    previewText: ({ title, hashtags }) => buildText(title, hashtags, false),
+    buildUrl: ({ url, title, hashtags }) => `https://x.com/intent/post?text=${encodeURIComponent(buildText(title, hashtags, false))}&url=${encodeURIComponent(url)}`,
   },
   {
     key: 'whatsapp',
     label: 'WhatsApp',
     color: '#25D366',
     icon: '💬',
-    buildUrl: ({ url, title, hashtags }) => {
-      const text = hashtags ? `${title}\n\n${hashtags}\n\n${url}` : `${title}\n\n${url}`;
-      return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    },
+    previewText: ({ title, hashtags, url }) => buildText(title, hashtags, true, url),
+    buildUrl: ({ url, title, hashtags }) => `https://api.whatsapp.com/send?text=${encodeURIComponent(buildText(title, hashtags, true, url))}`,
   },
   {
     key: 'pinterest',
     label: 'Pinterest',
     color: '#E60023',
     icon: '📌',
+    previewText: ({ title, hashtags }) => hashtags ? `${title} ${hashtags}` : title,
     buildUrl: ({ url, title, image, hashtags }) => {
       const description = hashtags ? `${title} ${hashtags}` : title;
       return `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(image || '')}&description=${encodeURIComponent(description)}`;
@@ -148,11 +153,36 @@ export default function SocialShare() {
                 </button>
               </div>
 
-              {hashtags && (
-                <p className="text-xs text-ink-500 bg-paper-50 border border-paper-200 rounded px-3 py-2 mb-4 font-mono">
-                  {hashtags}
-                </p>
-              )}
+              <div className="space-y-2 mb-5">
+                {PLATFORMS.map(p => {
+                  const text = p.previewText({ title: selected.title, hashtags, url: liveUrl });
+                  return (
+                    <div key={p.key} className="border border-paper-200 rounded-lg p-3">
+                      <p className="text-xs font-mono uppercase tracking-wide text-ink-400 mb-1.5">
+                        <span className="mr-1.5">{p.icon}</span>{p.label} preview
+                      </p>
+                      {text ? (
+                        <p className="text-xs text-ink-700 whitespace-pre-wrap">{text}</p>
+                      ) : (
+                        <p className="text-xs text-amber-700">
+                          Facebook doesn't allow pre-filled post text (an anti-spam rule on their end, not something we can change) — the title/image come from the article page itself. Copy the hashtags below and paste them into the post yourself.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+                {hashtags && (
+                  <div className="flex items-center gap-2">
+                    <input readOnly value={hashtags} className="flex-1 text-xs font-mono text-ink-500 bg-paper-50 border border-paper-200 rounded px-2.5 py-2" />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(hashtags)}
+                      className="text-xs font-medium px-3 py-2 rounded border border-ink-300 text-ink-700 hover:bg-ink-50 shrink-0"
+                    >
+                      Copy hashtags
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <p className="text-xs font-mono uppercase tracking-wide text-ink-400 mb-3">Share to</p>
               <div className="grid grid-cols-2 gap-3">
