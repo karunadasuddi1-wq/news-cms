@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import client from '../api/client';
 
+function toHashtags(tags) {
+  if (!tags || tags.length === 0) return '';
+  return tags
+    .slice(0, 5)
+    .map(t => '#' + t.replace(/[^\p{L}\p{N}\p{M}]/gu, ''))
+    .filter(t => t.length > 1)
+    .join(' ');
+}
+
 const PLATFORMS = [
   {
     key: 'facebook',
@@ -14,21 +23,30 @@ const PLATFORMS = [
     label: 'X (Twitter)',
     color: '#000000',
     icon: '𝕏',
-    buildUrl: ({ url, title }) => `https://x.com/intent/post?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+    buildUrl: ({ url, title, hashtags }) => {
+      const text = hashtags ? `${title}\n\n${hashtags}` : title;
+      return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    },
   },
   {
     key: 'whatsapp',
     label: 'WhatsApp',
     color: '#25D366',
     icon: '💬',
-    buildUrl: ({ url, title }) => `https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' \n\n ' + url)}`,
+    buildUrl: ({ url, title, hashtags }) => {
+      const text = hashtags ? `${title}\n\n${hashtags}\n\n${url}` : `${title}\n\n${url}`;
+      return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    },
   },
   {
     key: 'pinterest',
     label: 'Pinterest',
     color: '#E60023',
     icon: '📌',
-    buildUrl: ({ url, title, image }) => `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(image || '')}&description=${encodeURIComponent(title)}`,
+    buildUrl: ({ url, title, image, hashtags }) => {
+      const description = hashtags ? `${title} ${hashtags}` : title;
+      return `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&media=${encodeURIComponent(image || '')}&description=${encodeURIComponent(description)}`;
+    },
   },
 ];
 
@@ -58,6 +76,7 @@ export default function SocialShare() {
   }, [query]);
 
   const liveUrl = selected && siteUrl ? `${siteUrl}/${selected.slug}/` : '';
+  const hashtags = selected ? toHashtags(selected.tags) : '';
 
   function copyLink() {
     navigator.clipboard.writeText(liveUrl);
@@ -129,12 +148,17 @@ export default function SocialShare() {
                 </button>
               </div>
 
+              {hashtags && (
+                <p className="text-xs text-ink-500 bg-paper-50 border border-paper-200 rounded px-3 py-2 mb-4 font-mono">
+                  {hashtags}
+                </p>
+              )}
+
               <p className="text-xs font-mono uppercase tracking-wide text-ink-400 mb-3">Share to</p>
               <div className="grid grid-cols-2 gap-3">
                 {PLATFORMS.map(p => (
-                  
-                    key={p.key}
-                    href={p.buildUrl({ url: liveUrl, title: selected.title, image: selected.featuredImage })}
+                  <a key={p.key}
+                    href={p.buildUrl({ url: liveUrl, title: selected.title, image: selected.featuredImage, hashtags })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2.5 px-4 py-3 rounded-lg text-white text-sm font-medium transition-opacity hover:opacity-90"
