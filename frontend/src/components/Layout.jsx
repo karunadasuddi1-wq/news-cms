@@ -9,6 +9,7 @@ const MAIN_NAV = [
   { to: '/ai-writer', label: 'AI Writer', icon: '✦' },
   { to: '/newsroom', label: 'Newsroom', icon: '◈' },
   { to: '/analytics', label: 'Analytics', icon: '▲' },
+  { to: '/social-share', label: 'Social Share', icon: '↗' },
 ];
 
 const CONTENT_NAV = [

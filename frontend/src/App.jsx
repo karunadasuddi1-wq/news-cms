@@ -8,6 +8,7 @@ import ArticleEditor from './pages/ArticleEditor';
 import Categories from './pages/Categories';
 import Users from './pages/Users';
 import Analytics from './pages/Analytics';
+import SocialShare from './pages/SocialShare';
 import Pages from './pages/Pages';
 import AiWriter from './pages/AiWriter';
 import Newsroom from './pages/Newsroom';
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/articles/:id" element={<ProtectedRoute><Layout><ArticleEditor /></Layout></ProtectedRoute>} />
           <Route path="/categories" element={<ProtectedRoute><Layout><Categories /></Layout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
+          <Route path="/social-share" element={<ProtectedRoute><Layout><SocialShare /></Layout></ProtectedRoute>} />
           <Route path="/pages" element={<ProtectedRoute><Layout><Pages /></Layout></ProtectedRoute>} />
           <Route path="/ai-writer" element={<ProtectedRoute><Layout><AiWriter /></Layout></ProtectedRoute>} />
           <Route path="/newsroom" element={<ProtectedRoute><Layout><Newsroom /></Layout></ProtectedRoute>} />
