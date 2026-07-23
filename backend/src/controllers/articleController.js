@@ -189,6 +189,15 @@ const update = asyncHandler(async (req, res) => {
 
   const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug } = req.body;
 
+  console.log('[DEBUG-AUTHOR-SAVE]', {
+    articleId: article.id,
+    reqUserRole: req.user.role,
+    canManage,
+    bodyAuthorIdReceived: authorId,
+    bodyAuthorIdType: typeof authorId,
+    articleAuthorIdBefore: article.authorId,
+  });
+
   if (title && title.trim()) article.title = title.trim();
 
   // Update slug: use custom slug if provided, else re-generate from new title
@@ -210,15 +219,20 @@ const update = asyncHandler(async (req, res) => {
     const newAuthor = await User.findByPk(authorId);
     if (!newAuthor) return res.status(400).json({ error: 'That author does not exist.' });
     article.authorId = authorId;
+    console.log('[DEBUG-AUTHOR-SAVE] Applied new authorId:', authorId, '-> article.authorId is now:', article.authorId);
+  } else {
+    console.log('[DEBUG-AUTHOR-SAVE] Did NOT apply authorId. authorId:', authorId, 'canManage:', canManage);
   }
 
   applySeoFields(article, req.body);
   applyTags(article, req.body);
   applySchedule(article, req.body);
   applySecondaryCategories(article, req.body);
+  console.log('[DEBUG-AUTHOR-SAVE] Right before article.save(), article.authorId =', article.authorId);
   await article.save();
 
   const full = await Article.findByPk(article.id, { include: AUTHOR_INCLUDE });
+  console.log('[DEBUG-AUTHOR-SAVE] After re-fetch from DB, authorId =', full.authorId, 'author name =', full.author?.name);
   res.json({ article: full });
 });
 
