@@ -299,16 +299,7 @@ export default function ArticleEditor() {
     setSaving(true);
     try {
       const payload = { ...form };
-      console.log('[FRONTEND-DEBUG]', {
-        'user.id': user.id,
-        'user.name': user.name,
-        'form.authorId': form.authorId,
-        'form.authorId typeof': typeof form.authorId,
-        'payload.authorId before delete-check': payload.authorId,
-        'can.manageAny': can.manageAny,
-      });
       if (!can.manageAny || !payload.authorId) delete payload.authorId;
-      console.log('[FRONTEND-DEBUG] payload.authorId AFTER delete-check:', payload.authorId);
       if (!payload.scheduledAt) payload.scheduledAt = null;
       if (isNew) {
         const res = await client.post('/articles', payload);

@@ -189,19 +189,6 @@ const update = asyncHandler(async (req, res) => {
 
   const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug } = req.body;
 
-  console.log('[DEBUG-AUTHOR-SAVE-2]', {
-    articleId: article.id,
-    reqUserId: req.user.id,
-    reqUserName: req.user.name,
-    reqUserEmail: req.user.email,
-    reqUserRole: req.user.role,
-    canManage,
-    bodyAuthorIdReceived: authorId,
-    bodyAuthorIdType: typeof authorId,
-    articleAuthorIdBefore: article.authorId,
-    fullReqBody: JSON.stringify(req.body).slice(0, 500),
-  });
-
   if (title && title.trim()) article.title = title.trim();
 
   // Update slug: use custom slug if provided, else re-generate from new title

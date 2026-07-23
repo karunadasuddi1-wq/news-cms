@@ -6,12 +6,12 @@ const { requireRole } = require('../middleware/roles');
 
 const router = express.Router();
 
-router.use(requireAuth, requireRole('admin'));
+router.use(requireAuth);
 
-router.get('/', list);
-router.get('/activity', dailyReport);
-router.post('/', create);
-router.put('/:id', update);
-router.delete('/:id', remove);
+router.get('/', requireRole('admin', 'editor'), list);
+router.get('/activity', requireRole('admin'), dailyReport);
+router.post('/', requireRole('admin'), create);
+router.put('/:id', requireRole('admin'), update);
+router.delete('/:id', requireRole('admin'), remove);
 
 module.exports = router;
