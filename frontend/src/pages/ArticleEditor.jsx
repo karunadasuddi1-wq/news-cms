@@ -162,7 +162,9 @@ export default function ArticleEditor() {
   };
   const [article, setArticle] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [staff, setStaff] = useState([]);
+  const [staffLoaded, setStaffLoaded] = useState(false);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [resyncing, setResyncing] = useState(false);
@@ -184,8 +186,12 @@ export default function ArticleEditor() {
   };
 
   useEffect(() => {
-    client.get('/categories').then(r => setCategories(r.data.categories));
-    if (can.manageAny) client.get('/users').then(r => setStaff(r.data.users));
+    client.get('/categories').then(r => setCategories(r.data.categories)).finally(() => setCategoriesLoaded(true));
+    if (can.manageAny) {
+      client.get('/users').then(r => setStaff(r.data.users)).finally(() => setStaffLoaded(true));
+    } else {
+      setStaffLoaded(true);
+    }
     client.get('/settings').then(r => {
       const key = r.data.settings?.content_language || 'kannada';
       setContentLanguageLabel(LANGUAGE_LABELS[key] || 'Kannada');
@@ -352,7 +358,7 @@ export default function ArticleEditor() {
     }
   }
 
-  if (loading) return <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-20 text-center">Loading…</p>;
+  if (loading || !staffLoaded || !categoriesLoaded) return <p className="font-mono text-xs uppercase tracking-widest text-ink-400 py-20 text-center">Loading…</p>;
 
   const statusActions = [];
   if (article) {
