@@ -75,6 +75,19 @@ export default function Articles() {
     }
   }
 
+  async function assignArticle(article, assignedToId) {
+    setBusyId(article.id);
+    setError('');
+    try {
+      await client.put(`/articles/${article.id}`, { assignedToId: assignedToId || null });
+      load();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function remove(article) {
     if (!window.confirm(`Delete "${article.title}"? This can't be undone.`)) return;
     setBusyId(article.id);
@@ -246,6 +259,8 @@ export default function Articles() {
                       busy={busyId === a.id}
                       onTransition={transition}
                       onDelete={remove}
+                      onAssign={assignArticle}
+                      authors={authors}
                     />
                   </td>
                 </tr>
@@ -258,7 +273,7 @@ export default function Articles() {
   );
 }
 
-function ArticleActions({ article, canManageAny, busy, onTransition, onDelete }) {
+function ArticleActions({ article, canManageAny, busy, onTransition, onDelete, onAssign, authors }) {
   const actions = [];
 
   if (article.status === 'draft') {
@@ -272,6 +287,8 @@ function ArticleActions({ article, canManageAny, busy, onTransition, onDelete })
     actions.push({ label: 'Unpublish', next: 'draft' });
   }
 
+  const showAssign = canManageAny && article.status !== 'published';
+
   return (
     <div className="inline-flex items-center gap-2">
       <Link
@@ -280,6 +297,20 @@ function ArticleActions({ article, canManageAny, busy, onTransition, onDelete })
       >
         Edit
       </Link>
+      {showAssign && (
+        <select
+          disabled={busy}
+          value={article.assignedToId || ''}
+          onChange={(e) => onAssign(article, e.target.value)}
+          className="text-xs font-medium px-2 py-1 rounded border border-paper-200 text-ink-600 bg-white disabled:opacity-50"
+          title="Assign this draft to a staff member"
+        >
+          <option value="">Assign…</option>
+          {authors.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      )}
       {actions.map((a) => (
         <button
           key={a.next}
