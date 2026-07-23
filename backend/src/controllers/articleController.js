@@ -191,6 +191,9 @@ const update = asyncHandler(async (req, res) => {
 
   console.log('[DEBUG-AUTHOR-SAVE]', {
     articleId: article.id,
+    reqUserId: req.user.id,
+    reqUserName: req.user.name,
+    reqUserEmail: req.user.email,
     reqUserRole: req.user.role,
     canManage,
     bodyAuthorIdReceived: authorId,
