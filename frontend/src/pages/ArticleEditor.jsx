@@ -153,7 +153,7 @@ export default function ArticleEditor() {
   const navigate = useNavigate();
   const { user, can } = useAuth();
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({ ...emptyForm, authorId: user.id }));
   // Safety: ensure array fields are always arrays
   const safeForm = {
     ...form,
@@ -453,7 +453,7 @@ export default function ArticleEditor() {
             <label className="block">
               <span className={labelCls}>Byline</span>
               <select disabled={readOnly} value={form.authorId || ''} onChange={e => setField('authorId', e.target.value)} className={inputCls()}>
-                <option value="">Me ({user.name})</option>
+                <option value={user.id}>Me ({user.name})</option>
                 {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </label>

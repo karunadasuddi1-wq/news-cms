@@ -39,6 +39,25 @@ describe('Article authorId (byline) reassignment via update endpoint', () => {
     expect(res.body.article.authorId).toBe(author2.id);
   });
 
+  it('REGRESSION: an editor reassigning a guest-submitted article to THEMSELVES works correctly (the "Me" dropdown case)', async () => {
+    const guestPlaceholder = await makeUser('guest-contributor@system.local', 'author');
+    const article = await Article.create({
+      title: 'Guest submission', slug: 'guest-submission-test', content: 'x'.repeat(60), excerpt: 'x',
+      authorId: guestPlaceholder.id, categoryId: category.id, status: 'draft',
+    });
+
+    const res = await request(app)
+      .put(`/api/articles/${article.id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ authorId: admin.id });
+
+    expect(res.status).toBe(200);
+    expect(res.body.article.authorId).toBe(admin.id);
+
+    const reloaded = await Article.findByPk(article.id);
+    expect(reloaded.authorId).toBe(admin.id);
+  });
+
   it('an admin/editor CAN reassign the byline to a different staff member', async () => {
     const article = await Article.create({
       title: 'Test 2', slug: 'test-2', content: 'x'.repeat(60), excerpt: 'x',
