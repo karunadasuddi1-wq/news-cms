@@ -5,6 +5,7 @@ const { generateUniqueSlug, cleanSlug } = require('../utils/slug');
 
 const AUTHOR_INCLUDE = [
   { model: User, as: 'author', attributes: ['id', 'name', 'email', 'role'] },
+  { model: User, as: 'assignedTo', attributes: ['id', 'name'] },
   { model: Category, as: 'category', attributes: ['id', 'name', 'slug'] },
 ];
 
@@ -66,16 +67,20 @@ async function resolveSlug(customSlug, fallbackText, excludeId = null) {
 }
 
 const list = asyncHandler(async (req, res) => {
-  const { status, categoryId, authorId, search, dateFrom, dateTo } = req.query;
+  const { status, categoryId, authorId, assignedToId, search, dateFrom, dateTo } = req.query;
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 20, 1), 100);
 
   const where = {};
   if (!canManageAny(req.user)) {
-    where.authorId = req.user.id;
+    // Non-managers see their own authored articles, OR anything explicitly
+    // assigned to them (e.g. a guest submission a manager handed off) —
+    // assignment is a separate concept from authorship/byline.
+    where[Op.or] = [{ authorId: req.user.id }, { assignedToId: req.user.id }];
   } else if (authorId) {
     where.authorId = authorId;
   }
+  if (assignedToId) where.assignedToId = assignedToId;
   if (status) where.status = status;
   if (categoryId) where.categoryId = categoryId;
   if (search) where.title = { [Op.like]: `%${search}%` };
@@ -187,7 +192,7 @@ const update = asyncHandler(async (req, res) => {
     });
   }
 
-  const { title, excerpt, content, featuredImage, categoryId, authorId, slug: customSlug } = req.body;
+  const { title, excerpt, content, featuredImage, categoryId, authorId, assignedToId, slug: customSlug } = req.body;
 
   if (title && title.trim()) article.title = title.trim();
 
@@ -210,6 +215,15 @@ const update = asyncHandler(async (req, res) => {
     const newAuthor = await User.findByPk(authorId);
     if (!newAuthor) return res.status(400).json({ error: 'That author does not exist.' });
     article.authorId = authorId;
+  }
+  if (assignedToId !== undefined && canManage) {
+    if (assignedToId === null || assignedToId === '') {
+      article.assignedToId = null;
+    } else {
+      const assignee = await User.findByPk(assignedToId);
+      if (!assignee) return res.status(400).json({ error: 'That assignee does not exist.' });
+      article.assignedToId = assignedToId;
+    }
   }
 
   applySeoFields(article, req.body);

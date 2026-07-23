@@ -11,7 +11,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import MultiCategorySelect from '../components/MultiCategorySelect';
 
 const emptyForm = {
-  title: '', excerpt: '', content: '', featuredImage: '', categoryId: '', authorId: '',
+  title: '', excerpt: '', content: '', featuredImage: '', categoryId: '', authorId: '', assignedToId: '',
   slug: '', tags: [],
   seoTitle: '', seoDescription: '', focusKeyword: '', ogImage: '', canonicalUrl: '', noIndex: false, imageAlt: '', kannadaKeyword: '',
   scheduledAt: '',
@@ -211,6 +211,7 @@ export default function ArticleEditor() {
           featuredImage: a.featuredImage || '',
           categoryId: a.categoryId,
           authorId: a.authorId,
+          assignedToId: a.assignedToId || '',
           slug: a.slug || '',
           tags: Array.isArray(a.tags) ? a.tags : [],
           secondaryCategories: Array.isArray(a.secondaryCategories) ? a.secondaryCategories : [],
@@ -300,6 +301,7 @@ export default function ArticleEditor() {
     try {
       const payload = { ...form };
       if (!can.manageAny || !payload.authorId) delete payload.authorId;
+      if (!can.manageAny) delete payload.assignedToId;
       if (!payload.scheduledAt) payload.scheduledAt = null;
       if (isNew) {
         const res = await client.post('/articles', payload);
@@ -321,6 +323,7 @@ export default function ArticleEditor() {
     try {
       const savePayload = { ...form };
       if (!can.manageAny || !savePayload.authorId) delete savePayload.authorId;
+      if (!can.manageAny) delete savePayload.assignedToId;
       if (!savePayload.scheduledAt) savePayload.scheduledAt = null;
       await client.put(`/articles/${id}`, savePayload);
 
@@ -459,6 +462,17 @@ export default function ArticleEditor() {
             <label className="block">
               <span className={labelCls}>Byline</span>
               <select disabled={readOnly} value={form.authorId || ''} onChange={e => setField('authorId', e.target.value)} className={inputCls()}>
+                <option value={user.id}>Me ({user.name})</option>
+                {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </label>
+          )}
+          {can.manageAny && (
+            <label className="block">
+              <span className={labelCls}>Assigned To</span>
+              <span className="text-ink-400 normal-case font-sans ml-1 text-xs">(who's handling this — separate from the byline)</span>
+              <select disabled={readOnly} value={form.assignedToId || ''} onChange={e => setField('assignedToId', e.target.value)} className={inputCls()}>
+                <option value="">Unassigned</option>
                 <option value={user.id}>Me ({user.name})</option>
                 {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>

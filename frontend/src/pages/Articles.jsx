@@ -18,12 +18,13 @@ function formatDate(d) {
 }
 
 export default function Articles() {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [params, setParams] = useSearchParams();
   const status = params.get('status') || '';
   const dateFrom = params.get('dateFrom') || '';
   const dateTo = params.get('dateTo') || '';
   const authorId = params.get('authorId') || '';
+  const assignedToId = params.get('assignedToId') || '';
 
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,12 +45,13 @@ export default function Articles() {
     if (dateFrom) query.dateFrom = dateFrom;
     if (dateTo) query.dateTo = dateTo;
     if (authorId) query.authorId = authorId;
+    if (assignedToId) query.assignedToId = assignedToId;
     client
       .get('/articles', { params: query })
       .then((res) => setArticles(res.data.articles))
       .catch((err) => setError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [status, dateFrom, dateTo, authorId]);
+  }, [status, dateFrom, dateTo, authorId, assignedToId]);
 
   useEffect(load, [load]);
 
@@ -120,6 +122,17 @@ export default function Articles() {
             {f.label}
           </button>
         ))}
+
+        <button
+          onClick={() => updateParam('assignedToId', assignedToId === String(user.id) ? '' : String(user.id))}
+          className={`text-xs font-mono uppercase tracking-wide px-3 py-1.5 rounded-full border transition-colors ${
+            assignedToId === String(user.id)
+              ? 'bg-press-red text-white border-press-red'
+              : 'border-paper-200 text-ink-600 hover:border-ink-600'
+          }`}
+        >
+          Assigned to Me
+        </button>
 
         <div className="h-5 w-px bg-paper-200 mx-1" />
 
@@ -213,7 +226,12 @@ export default function Articles() {
                       {a.title}
                     </Link>
                   </td>
-                  <td className="px-5 py-3.5 text-ink-600">{a.author?.name}</td>
+                  <td className="px-5 py-3.5 text-ink-600">
+                    {a.author?.name}
+                    {a.assignedTo && (
+                      <p className="text-[11px] text-press-red font-mono mt-0.5">→ {a.assignedTo.name}</p>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 text-ink-600">{a.category?.name}</td>
                   <td className="px-5 py-3.5 text-ink-600 font-mono text-xs">
                     {formatDate(a.status === 'published' ? a.publishedAt : a.updatedAt)}

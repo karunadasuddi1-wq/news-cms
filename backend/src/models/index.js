@@ -13,6 +13,11 @@ const GuestChatMessage = require('./GuestChatMessage');
 Article.belongsTo(User, { as: 'author', foreignKey: { name: 'authorId', field: 'author_id', allowNull: false } });
 User.hasMany(Article, { as: 'articles', foreignKey: { name: 'authorId', field: 'author_id' } });
 
+// "Assigned to" is a separate, internal-only concept from the public byline —
+// who's responsible for finishing a draft, not who gets author credit.
+Article.belongsTo(User, { as: 'assignedTo', foreignKey: { name: 'assignedToId', field: 'assigned_to_id', allowNull: true } });
+User.hasMany(Article, { as: 'assignedArticles', foreignKey: { name: 'assignedToId', field: 'assigned_to_id' } });
+
 Article.belongsTo(Category, { as: 'category', foreignKey: { name: 'categoryId', field: 'category_id', allowNull: false } });
 Category.hasMany(Article, { as: 'articles', foreignKey: { name: 'categoryId', field: 'category_id' } });
 
